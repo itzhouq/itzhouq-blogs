@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xiaomi MiMo-V2 系列发布</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            padding: 60px 80px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide.active {
+            display: flex;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 封面样式 */
+        .slide-cover {
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%);
+            text-align: center;
+            align-items: center;
+        }
+
+        .cover-badge {
+            background: linear-gradient(90deg, #ff6b35, #f7931e);
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            display: inline-block;
+        }
+
+        .cover-title {
+            font-size: 72px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #ff6b35, #f7931e, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 30px;
+            line-height: 1.2;
+        }
+
+        .cover-subtitle {
+            font-size: 42px;
+            color: #8b949e;
+            margin-bottom: 50px;
+        }
+
+        .cover-date {
+            font-size: 28px;
+            color: #6e7681;
+        }
+
+        /* 内容页样式 */
+        .slide-header {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 50px;
+            color: #ff6b35;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .slide-header::before {
+            content: '';
+            width: 8px;
+            height: 50px;
+            background: linear-gradient(180deg, #ff6b35, #f7931e);
+            border-radius: 4px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            flex: 1;
+        }
+
+        .content-grid.single {
+            grid-template-columns: 1fr;
+        }
+
+        .content-grid.triple {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(255, 107, 53, 0.2);
+        }
+
+        .card-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #f7931e;
+        }
+
+        .card-content {
+            font-size: 28px;
+            line-height: 1.8;
+            color: #c9d1d9;
+        }
+
+        .highlight {
+            color: #ffd93d;
+            font-weight: 600;
+        }
+
+        .stat-box {
+            background: rgba(255, 107, 53, 0.1);
+            border-left: 4px solid #ff6b35;
+            padding: 25px 30px;
+            margin: 15px 0;
+            border-radius: 0 12px 12px 0;
+        }
+
+        .stat-value {
+            font-size: 48px;
+            font-weight: 800;
+            color: #ff6b35;
+        }
+
+        .stat-label {
+            font-size: 24px;
+            color: #8b949e;
+            margin-top: 8px;
+        }
+
+        .model-card {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(247, 147, 30, 0.05));
+            border: 2px solid rgba(255, 107, 53, 0.3);
+            text-align: center;
+        }
+
+        .model-name {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 15px;
+            background: linear-gradient(90deg, #ff6b35, #ffd93d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .model-desc {
+            font-size: 26px;
+            color: #c9d1d9;
+            line-height: 1.6;
+        }
+
+        .list-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            font-size: 30px;
+            line-height: 1.6;
+        }
+
+        .list-item::before {
+            content: '▸';
+            color: #ff6b35;
+            font-size: 32px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .leader-board {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .leader-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px 25px;
+            border-radius: 12px;
+            font-size: 28px;
+        }
+
+        .leader-rank {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 20px;
+            font-size: 24px;
+        }
+
+        .leader-rank.gold {
+            background: linear-gradient(135deg, #ffd700, #ffed4a);
+            color: #1a1a2e;
+        }
+
+        .price-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 28px;
+        }
+
+        .price-table th {
+            background: rgba(255, 107, 53, 0.2);
+            padding: 20px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .price-table td {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .price-value {
+            color: #ffd93d;
+            font-weight: 700;
+            font-size: 32px;
+        }
+
+        /* 导航 */
+        .nav-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: rgba(255, 107, 53, 0.2);
+            border: 2px solid #ff6b35;
+            color: #fff;
+            padding: 15px 35px;
+            border-radius: 50px;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: #ff6b35;
+            transform: scale(1.05);
+        }
+
+        .slide-counter {
+            position: fixed;
+            bottom: 35px;
+            right: 40px;
+            font-size: 24px;
+            color: #6e7681;
+            z-index: 100;
+        }
+
+        /* 特殊样式 */
+        .icon-large {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .quote {
+            font-size: 36px;
+            font-style: italic;
+            color: #c9d1d9;
+            padding: 30px 40px;
+            border-left: 5px solid #ff6b35;
+            background: rgba(255, 107, 53, 0.05);
+            border-radius: 0 15px 15px 0;
+            margin: 30px 0;
+        }
+
+        .tag {
+            display: inline-block;
+            background: rgba(255, 107, 53, 0.2);
+            color: #ff6b35;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 22px;
+            margin: 5px;
+        }
+
+        .timeline {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 40px 0;
+        }
+
+        .timeline-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .timeline-date {
+            font-size: 24px;
+            color: #8b949e;
+            margin-bottom: 15px;
+        }
+
+        .timeline-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #f7931e;
+        }
+
+        .timeline-connector {
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, #ff6b35, #f7931e);
+        }
+
+        @media (max-width: 1200px) {
+            .slide { padding: 40px 50px; }
+            .cover-title { font-size: 56px; }
+            .slide-header { font-size: 40px; }
+            .card-title { font-size: 28px; }
+            .card-content, .list-item { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation">
+        <div class="slide slide-cover active" id="slide-1">
+            <div class="cover-badge">2026.03.19 正式发布</div>
+            <h1 class="cover-title">Xiaomi MiMo-V2</h1>
+            <p class="cover-subtitle">万亿参数大模型系列 · 引领 Agent 时代</p>
+            <p class="cover-date">小米自研大模型 · 全球第八 · 品牌第五</p>
+        </div>
+
+        <div class="slide" id="slide-2">
+            <h2 class="slide-header">三款全新模型发布</h2>
+            <div class="content-grid triple">
+                <div class="card model-card">
+                    <div class="icon-large">🧠</div>
+                    <h3 class="model-name">MiMo-V2-Pro</h3>
+                    <p class="model-desc">旗舰基座大模型<br>万亿参数 · 1M上下文<br>专为 Agent 打造</p>
+                    <div style="margin-top: 20px;">
+                        <span class="tag">推理</span>
+                        <span class="tag">代码</span>
+                        <span class="tag">规划</span>
+                    </div>
+                </div>
+                <div class="card model-card">
+                    <div class="icon-large">🌐</div>
+                    <h3 class="model-name">MiMo-V2-Omni</h3>
+                    <p class="model-desc">全模态 Agent 模型<br>视觉 + 音频 + 文本<br>统一感知能力</p>
+                    <div style="margin-top: 20px;">
+                        <span class="tag">多模态</span>
+                        <span class="tag">交互</span>
+                        <span class="tag">理解</span>
+                    </div>
+                </div>
+                <div class="card model-card">
+                    <div class="icon-large">🎙️</div>
+                    <h3 class="model-name">MiMo-V2-TTS</h3>
+                    <p class="model-desc">高拟真语音合成<br>自然流畅的人声<br>多语言支持</p>
+                    <div style="margin-top: 20px;">
+                        <span class="tag">语音</span>
+                        <span class="tag">合成</span>
+                        <span class="tag">自然</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-3">
+            <h2 class="slide-header">MiMo-V2-Pro 核心参数</h2>
+            <div class="content-grid">
+                <div>
+                    <div class="stat-box">
+                        <div class="stat-value">1T+</div>
+                        <div class="stat-label">总参数量（万亿级）</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">42B</div>
+                        <div class="stat-label">激活参数（MoE架构）</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value">1M</div>
+                        <div class="stat-label">超长上下文窗口</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">架构亮点</h3>
+                    <div class="list-item">创新的混合注意力架构</div>
+                    <div class="list-item">7:1 混合注意力比例</div>
+                    <div class="list-item">HySparse 稀疏注意力技术</div>
+                    <div class="list-item">专为 Agent 工作流优化</div>
+                    <div class="list-item">支持复杂推理与规划</div>
+                    <div class="list-item">代码生成能力超群</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-4">
+            <h2 class="slide-header">全球排行榜表现</h2>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">Artificial Analysis 综合智能榜</h3>
+                    <div class="leader-board">
+                        <div class="leader-item">
+                            <div class="leader-rank gold">1</div>
+                            <span>GPT-5.2</span>
+                        </div>
+                        <div class="leader-item">
+                            <div class="leader-rank gold">2</div>
+                            <span>Claude Opus 4.6</span>
+                        </div>
+                        <div class="leader-item">
+                            <div class="leader-rank">3</div>
+                            <span>Gemini 3.1 Pro</span>
+                        </div>
+                        <div class="leader-item" style="background: rgba(255, 107, 53, 0.15); border: 2px solid #ff6b35;">
+                            <div class="leader-rank" style="background: linear-gradient(135deg, #ff6b35, #ffd93d); color: #1a1a2e;">8</div>
+                            <span style="font-weight: 700; color: #ff6b35;">MiMo-V2-Pro ⭐</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">品牌排名</h3>
+                    <div style="text-align: center; padding: 30px 0;">
+                        <div class="stat-value" style="font-size: 100px;">TOP 5</div>
+                        <div class="stat-label" style="font-size: 28px; margin-top: 20px;">超越 xAI Grok</div>
+                        <div class="stat-label" style="font-size: 28px;">接近 GPT-5.2 性能</div>
+                        <div class="stat-label" style="font-size: 28px;">成本仅为 1/6 ~ 1/7</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-5">
+            <h2 class="slide-header">从 Hunter Alpha 到 MiMo-V2-Pro</h2>
+            <div class="quote">
+                "近日一款名为 Hunter Alpha 的神秘模型在开发者平台 OpenRouter 匿名上线后，凭借 1 万亿参数规模及 100 万 token 上下文窗口，发布后调用量迅速登顶。"
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-date">2026年3月初</div>
+                    <div class="timeline-title">Hunter Alpha 匿名上线</div>
+                </div>
+                <div class="timeline-connector"></div>
+                <div class="timeline-item">
+                    <div class="timeline-date">上线数日内</div>
+                    <div class="timeline-title">调用量登顶 OpenRouter</div>
+                </div>
+                <div class="timeline-connector"></div>
+                <div class="timeline-item">
+                    <div class="timeline-date">外界猜测</div>
+                    <div class="timeline-title">疑为 DeepSeek V4</div>
+                </div>
+                <div class="timeline-connector"></div>
+                <div class="timeline-item">
+                    <div class="timeline-date">2026.03.19</div>
+                    <div class="timeline-title">雷军揭晓：小米 MiMo-V2-Pro</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-6">
+            <h2 class="slide-header">API 定价（极具竞争力）</h2>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">256K 上下文以内</h3>
+                    <table class="price-table">
+                        <tr>
+                            <th>类型</th>
+                            <th>价格</th>
+                        </tr>
+                        <tr>
+                            <td>输入</td>
+                            <td class="price-value">$1 / 百万 tokens</td>
+                        </tr>
+                        <tr>
+                            <td>输出</td>
+                            <td class="price-value">$3 / 百万 tokens</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">1M 上下文以内</h3>
+                    <table class="price-table">
+                        <tr>
+                            <th>类型</th>
+                            <th>价格</th>
+                        </tr>
+                        <tr>
+                            <td>输入</td>
+                            <td class="price-value">$2 / 百万 tokens</td>
+                        </tr>
+                        <tr>
+                            <td>输出</td>
+                            <td class="price-value">$6 / 百万 tokens</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="quote" style="margin-top: 30px; font-size: 30px;">
+                💡 相比 Claude Opus 4.6，成本仅为 1/6 ~ 1/7，性能接近
+            </div>
+        </div>
+
+        <div class="slide" id="slide-7">
+            <h2 class="slide-header">MiMo 模型发展历程</h2>
+            <div class="content-grid single">
+                <div class="card" style="padding: 30px 40px;">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; text-align: center;">
+                        <div>
+                            <div style="font-size: 24px; color: #8b949e;">2025.04</div>
+                            <div style="font-size: 28px; font-weight: 600; color: #f7931e; margin: 15px 0;">MiMo-7B</div>
+                            <div style="font-size: 22px; color: #c9d1d9;">首个推理模型<br>7B参数 · 开源</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 24px; color: #8b949e;">2025.12</div>
+                            <div style="font-size: 28px; font-weight: 600; color: #f7931e; margin: 15px 0;">MiMo-V2-Flash</div>
+                            <div style="font-size: 22px; color: #c9d1d9;">309B 总参数<br>15B 激活 · 150 tok/s</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 24px; color: #8b949e;">2026.02</div>
+                            <div style="font-size: 28px; font-weight: 600; color: #f7931e; margin: 15px 0;">HySparse</div>
+                            <div style="font-size: 22px; color: #c9d1d9;">混合稀疏注意力<br>架构创新</div>
+                        </div>
+                        <div style="background: rgba(255, 107, 53, 0.15); border-radius: 15px; padding: 20px; border: 2px solid #ff6b35;">
+                            <div style="font-size: 24px; color: #8b949e;">2026.03</div>
+                            <div style="font-size: 28px; font-weight: 600; color: #ff6b35; margin: 15px 0;">MiMo-V2 系列</div>
+                            <div style="font-size: 22px; color: #c9d1d9;">万亿参数 Pro<br>全模态 Omni · TTS</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="quote" style="margin-top: 20px;">
+                雷军：小米 AI 进展「比大家看到的快很多」，预计今年研发投入将超过 160 亿元
+            </div>
+        </div>
+
+        <div class="slide" id="slide-8">
+            <h2 class="slide-header">核心团队与技术实力</h2>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">团队负责人</h3>
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 48px; font-weight: 700; margin-bottom: 15px;">罗福莉</div>
+                        <div style="font-size: 26px; color: #8b949e; margin-bottom: 25px;">"95后 AI 才女"</div>
+                        <div class="list-item" style="text-align: left;">北京师范大学计算机本科</div>
+                        <div class="list-item" style="text-align: left;">北京大学计算语言学硕士</div>
+                        <div class="list-item" style="text-align: left;">前 DeepSeek-V2 关键开发者</div>
+                        <div class="list-item" style="text-align: left;">2025.11 加入小米</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">技术亮点</h3>
+                    <div class="list-item">强化学习训练创新</div>
+                    <div class="list-item">3层 MTP 推理加速</div>
+                    <div class="list-item">并行 Token 验证技术</div>
+                    <div class="list-item">2.0-2.6x 推理速度提升</div>
+                    <div class="list-item">深度适配 Claude Code</div>
+                    <div class="list-item">MIT 协议开源</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide" id="slide-9">
+            <h2 class="slide-header">生态整合与开放平台</h2>
+            <div class="content-grid">
+                <div class="card">
+                    <h3 class="card-title">小米生态接入</h3>
+                    <div class="list-item">Xiaomi MiClaw 智能中枢</div>
+                    <div class="list-item">MiMo Studio 开发平台</div>
+                    <div class="list-item">金山办公 WPS</div>
+                    <div class="list-item">小米浏览器</div>
+                    <div class="list-item">小米汽车 HAD 辅助驾驶</div>
+                    <div class="list-item">人车家全生态互联</div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">开发者开放接口</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px;">
+                        <span class="tag">OpenClaw</span>
+                        <span class="tag">OpenCode</span>
+                        <span class="tag">KiloCode</span>
+                        <span class="tag">Blackbox</span>
+                        <span class="tag">Cline</span>
+                        <span class="tag">Roo</span>
+                    </div>
+                    <div class="quote" style="margin-top: 30px; font-size: 26px;">
+                        🎁 限时免费体验周：未来 7 天零成本调用
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide slide-cover" id="slide-10">
+            <div class="cover-badge">总结</div>
+            <h1 class="cover-title" style="font-size: 64px;">MiMo-V2 系列</h1>
+            <div style="font-size: 36px; color: #c9d1d9; max-width: 900px; line-height: 2;">
+                <div>🧠 <span class="highlight">万亿参数</span>旗舰大模型</div>
+                <div>🌍 全球综合智能 <span class="highlight">TOP 8</span>，品牌 <span class="highlight">TOP 5</span></div>
+                <div>💰 成本仅为 GPT/Claude 的 <span class="highlight">1/6</span></div>
+                <div>🚀 专为 <span class="highlight">Agent 时代</span>打造</div>
+                <div>🔓 开发者 <span class="highlight">全面开放</span></div>
+            </div>
+            <p class="cover-date" style="margin-top: 50px;">小米 · 让每个人都能享受科技的乐趣</p>
+        </div>
+    </div>
+
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevSlide()">◀ 上一页</button>
+        <button class="nav-btn" onclick="nextSlide()">下一页 ▶</button>
+    </div>
+    <div class="slide-counter" id="slideCounter">1 / 10</div>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 10;
+
+        function showSlide(n) {
+            document.querySelectorAll('.slide').forEach(slide => {
+                slide.classList.remove('active');
+            });
+            document.getElementById(`slide-${n}`).classList.add('active');
+            document.getElementById('slideCounter').textContent = `${n} / ${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                showSlide(currentSlide);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                showSlide(currentSlide);
+            }
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
+                e.preventDefault();
+                prevSlide();
+            }
+        });
+
+        // Touch/swipe support
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            }
+        }
+    </script>
+</body>
+</html>
