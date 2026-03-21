@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Superpowers — Claude Code 技能框架</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --cyan:   #00e5ff;
+      --purple: #9b59ff;
+      --green:  #00ff88;
+      --orange: #ff6b35;
+      --bg:     #040c18;
+      --bg2:    #0a1628;
+      --text:   #e8f4fd;
+      --muted:  #6a8aaa;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', 'PingFang SC', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    /* ——— 网格背景 ——— */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    /* ——— 光晕 ——— */
+    body::after {
+      content: '';
+      position: fixed;
+      width: 900px; height: 900px;
+      background: radial-gradient(circle, rgba(155,89,255,.12) 0%, transparent 65%);
+      top: -300px; right: -200px;
+      pointer-events: none; z-index: 0;
+    }
+
+    .deck { width: 100vw; height: 100vh; position: relative; z-index: 1; }
+
+    /* ——— 幻灯片 ——— */
+    .slide {
+      position: absolute; inset: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 100px;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .45s ease, transform .45s ease;
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .slide.center { align-items: center; text-align: center; }
+
+    /* ——— 标题样式 ——— */
+    .slide-label {
+      font-size: 1rem;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 18px;
+      font-weight: 600;
+    }
+    h1 {
+      font-size: 5.5rem;
+      font-weight: 800;
+      line-height: 1.08;
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 24px;
+    }
+    h2 {
+      font-size: 3.4rem;
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 32px;
+    }
+    h2 .hl { color: var(--cyan); }
+
+    .subtitle {
+      font-size: 1.7rem;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 820px;
+    }
+
+    /* ——— 卡片列表 ——— */
+    .cards {
+      display: grid;
+      gap: 20px;
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 8px;
+    }
+    .cards.col2 { grid-template-columns: 1fr 1fr; }
+    .cards.col3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    .card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(0,229,255,.18);
+      border-radius: 14px;
+      padding: 28px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+    }
+    .card-icon { font-size: 2.2rem; margin-bottom: 12px; }
+    .card-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 8px;
+    }
+    .card-body {
+      font-size: 1.15rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ——— 要点列表 ——— */
+    .points { list-style: none; max-width: 1000px; margin-top: 4px; }
+    .points li {
+      font-size: 1.55rem;
+      line-height: 1.5;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+    }
+    .points li:last-child { border-bottom: none; }
+    .points li::before {
+      content: '▸';
+      color: var(--cyan);
+      font-size: 1.1rem;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+
+    /* ——— 流程步骤 ——— */
+    .steps {
+      display: flex;
+      gap: 0;
+      align-items: center;
+      max-width: 1100px;
+      margin-top: 12px;
+      flex-wrap: nowrap;
+    }
+    .step {
+      flex: 1;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(0,229,255,.18);
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+      position: relative;
+    }
+    .step-num {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--cyan);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .step-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .step-desc { font-size: 1rem; color: var(--muted); }
+    .arrow {
+      font-size: 1.8rem;
+      color: var(--purple);
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
+
+    /* ——— 高亮 Badge ——— */
+    .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 30px;
+      font-size: 1rem;
+      font-weight: 700;
+      background: rgba(0,229,255,.15);
+      color: var(--cyan);
+      border: 1px solid rgba(0,229,255,.35);
+      margin-bottom: 18px;
+    }
+
+    /* ——— 大数字 ——— */
+    .bignum {
+      font-size: 7rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--cyan), var(--green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    /* ——— 总结卡 ——— */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      max-width: 1000px;
+      width: 100%;
+      margin-top: 12px;
+    }
+    .sum-card {
+      background: rgba(155,89,255,.08);
+      border: 1px solid rgba(155,89,255,.3);
+      border-radius: 12px;
+      padding: 26px 28px;
+    }
+    .sum-card .sum-q {
+      font-size: 1rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--purple);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .sum-card .sum-a {
+      font-size: 1.35rem;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ——— 导航 ——— */
+    .nav {
+      position: fixed;
+      bottom: 36px;
+      right: 56px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .nav-btn {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,229,255,.4);
+      background: rgba(0,229,255,.08);
+      color: var(--cyan);
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, border-color .2s;
+    }
+    .nav-btn:hover { background: rgba(0,229,255,.18); border-color: var(--cyan); }
+    .nav-counter {
+      font-size: 1rem;
+      color: var(--muted);
+      min-width: 48px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ——— 进度条 ——— */
+    .progress {
+      position: fixed;
+      bottom: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+      transition: width .4s ease;
+      z-index: 100;
+    }
+
+    /* ——— slide 进入动画补丁：强制 reflow ——— */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .slide.active { animation: slideIn .42s ease forwards; }
+  </style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- ① 封面 -->
+  <div class="slide center active" id="s1">
+    <div class="slide-label">Claude Code · Plugin</div>
+    <h1>Superpowers</h1>
+    <p class="subtitle">让 AI 真正像高级工程师一样工作的<br>完整开发工作流技能框架</p>
+    <div style="margin-top:40px; color:var(--muted); font-size:1.1rem; letter-spacing:.1em;">
+      Jesse Vincent &nbsp;·&nbsp; 2025.10 发布 &nbsp;·&nbsp; 102K+ ⭐
+    </div>
+  </div>
+
+  <!-- ② 问题：AI 编码的痛点 -->
+  <div class="slide" id="s2">
+    <div class="slide-label">为什么需要它</div>
+    <h2>原生 AI 编码的<span class="hl">三大痛点</span></h2>
+    <ul class="points">
+      <li>跳过规划直接写代码 —— 越改越乱，方向偏移</li>
+      <li>不写测试 —— 生成的代码缺乏验证，线上隐患多</li>
+      <li>声称完成但实际没跑通 —— "should work" 不等于 works</li>
+    </ul>
+  </div>
+
+  <!-- ③ 是什么 -->
+  <div class="slide" id="s3">
+    <div class="slide-label">是什么</div>
+    <h2>Superpowers 是<span class="hl">技能框架</span></h2>
+    <div class="cards col2">
+      <div class="card">
+        <div class="card-icon">🧠</div>
+        <div class="card-title">不是 Prompt，是工作流</div>
+        <div class="card-body">20+ 可组合技能，覆盖从想法到合并的完整研发生命周期</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">强制执行，不是建议</div>
+        <div class="card-body">技能不是可选项——一旦匹配场景，Claude 必须按流程执行</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔌</div>
+        <div class="card-title">Claude Code 插件</div>
+        <div class="card-body">通过官方插件市场一键安装，自动激活，无需记忆指令</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔁</div>
+        <div class="card-title">上下文隔离</div>
+        <div class="card-body">每个任务启动独立子 Agent，避免长上下文导致的偏移和遗忘</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 核心技能地图 -->
+  <div class="slide" id="s4">
+    <div class="slide-label">核心技能</div>
+    <h2>20+ 技能，<span class="hl">6 大类</span></h2>
+    <div class="cards col3">
+      <div class="card">
+        <div class="card-icon">💡</div>
+        <div class="card-title">Brainstorming</div>
+        <div class="card-body">先澄清需求、提出方案、获得确认，再写一行代码</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🧪</div>
+        <div class="card-title">TDD</div>
+        <div class="card-body">强制 RED→GREEN→REFACTOR，先有失败测试才能写实现</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <div class="card-title">Systematic Debugging</div>
+        <div class="card-body">根因分析 → 假设 → 验证，三次失败触发架构评审</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">👁️</div>
+        <div class="card-title">Code Review</div>
+        <div class="card-body">每个任务后自动审查，Critical 问题阻塞后续进度</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <div class="card-title">Planning & Executing</div>
+        <div class="card-body">写实施计划、分批执行、持续检查点确认进度</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">✅</div>
+        <div class="card-title">Verification</div>
+        <div class="card-body">声称完成前必须运行验证命令，证据优先于断言</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑤ 开发工作流 -->
+  <div class="slide" id="s5">
+    <div class="slide-label">怎么用 · 完整工作流</div>
+    <h2>从想法到合并的<span class="hl">完整链路</span></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-name">Brainstorm</div>
+        <div class="step-desc">澄清需求<br>确定方案</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-name">Write Plan</div>
+        <div class="step-desc">拆解任务<br>写实施计划</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-name">TDD 实现</div>
+        <div class="step-desc">先测试<br>后实现</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-name">Code Review</div>
+        <div class="step-desc">自动审查<br>阻塞问题</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="step-num">05</div>
+        <div class="step-name">Verify & Merge</div>
+        <div class="step-desc">验证通过<br>合并入库</div>
+      </div>
+    </div>
+    <p style="margin-top:32px; font-size:1.3rem; color:var(--muted);">
+      子 Agent 独立执行每个任务 · 两阶段审查（规范合规 + 代码质量）
+    </p>
+  </div>
+
+  <!-- ⑥ 安装与使用 -->
+  <div class="slide" id="s6">
+    <div class="slide-label">怎么用 · 安装</div>
+    <h2>两步<span class="hl">开始使用</span></h2>
+    <ul class="points">
+      <li>
+        <span>
+          <strong style="color:var(--cyan);">Step 1 · 安装</strong><br>
+          <span style="color:var(--muted);">Claude Code 插件市场搜索 <code style="color:var(--green);background:rgba(0,255,136,.1);padding:2px 8px;border-radius:4px;">superpowers</code>，一键安装</span>
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong style="color:var(--cyan);">Step 2 · 直接开工</strong><br>
+          <span style="color:var(--muted);">描述你要做什么，技能自动匹配激活，无需记忆任何指令</span>
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong style="color:var(--cyan);">可选 · 手动触发</strong><br>
+          <span style="color:var(--muted);">
+            <code style="color:var(--green);background:rgba(0,255,136,.1);padding:2px 8px;border-radius:4px;">/superpowers:brainstorm</code> &nbsp;
+            <code style="color:var(--green);background:rgba(0,255,136,.1);padding:2px 8px;border-radius:4px;">/superpowers:write-plan</code> &nbsp;
+            <code style="color:var(--green);background:rgba(0,255,136,.1);padding:2px 8px;border-radius:4px;">/superpowers:execute-plan</code>
+          </span>
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ⑦ 核心原则 -->
+  <div class="slide" id="s7">
+    <div class="slide-label">设计理念</div>
+    <h2>三条<span class="hl">核心原则</span></h2>
+    <ul class="points">
+      <li>
+        <span>
+          <strong style="color:var(--cyan);">强制 &gt; 建议</strong>&emsp;
+          <span style="color:var(--muted);">技能一旦匹配场景就必须执行，防止在"简单任务"上跳过关键步骤</span>
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong style="color:var(--cyan);">证据优先</strong>&emsp;
+          <span style="color:var(--muted);">"应该能跑" ≠ 跑通了。声称完成前必须运行验证命令并给出输出</span>
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong style="color:var(--cyan);">YAGNI 执行</strong>&emsp;
+          <span style="color:var(--muted);">你不会需要它——构建最简可行方案，拒绝过度工程化</span>
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ⑧ 数据亮点 -->
+  <div class="slide center" id="s8">
+    <div class="slide-label">影响力</div>
+    <div class="bignum">102K+</div>
+    <h2 style="margin-bottom:16px;">GitHub Stars</h2>
+    <p class="subtitle">2025 年 10 月发布，同年 Claude Code 插件系统上线首日推出<br>
+    数月内成为 AI 编码领域增长最快的工作流框架</p>
+    <div style="margin-top:40px; display:flex; gap:48px; justify-content:center;">
+      <div style="text-align:center;">
+        <div style="font-size:2.8rem;font-weight:800;color:var(--purple);">20+</div>
+        <div style="color:var(--muted);font-size:1.1rem;">可组合技能</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:2.8rem;font-weight:800;color:var(--green);">100%</div>
+        <div style="color:var(--muted);font-size:1.1rem;">全生命周期覆盖</div>
+      </div>
+      <div style="text-align:center;">
+        <div style="font-size:2.8rem;font-weight:800;color:var(--orange);">0</div>
+        <div style="color:var(--muted);font-size:1.1rem;">需要记忆的指令</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑨ 总结 -->
+  <div class="slide" id="s9">
+    <div class="slide-label">总结</div>
+    <h2>Superpowers 让 Claude 真正<span class="hl">靠谱</span></h2>
+    <div class="summary-grid">
+      <div class="sum-card">
+        <div class="sum-q">是什么</div>
+        <div class="sum-a">Claude Code 的完整软件开发工作流框架，20+ 可组合技能</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-q">为什么</div>
+        <div class="sum-a">解决 AI 跳过规划、不写测试、声称完成的三大顽疾</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-q">怎么样</div>
+        <div class="sum-a">强制执行 · 证据优先 · YAGNI，让 AI 像真正的高级工程师一样工作</div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-q">如何上手</div>
+        <div class="sum-a">插件市场安装 Superpowers，直接描述任务，技能自动激活</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- 导航 -->
+<div class="nav">
+  <button class="nav-btn" id="prev">&#8592;</button>
+  <span class="nav-counter" id="counter">1 / 9</span>
+  <button class="nav-btn" id="next">&#8594;</button>
+</div>
+<div class="progress" id="progress"></div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let cur = 0;
+
+  function goto(n) {
+    slides[cur].classList.remove('active');
+    cur = (n + total) % total;
+    slides[cur].classList.remove('active');
+    // force reflow
+    void slides[cur].offsetWidth;
+    slides[cur].classList.add('active');
+    document.getElementById('counter').textContent = (cur + 1) + ' / ' + total;
+    document.getElementById('progress').style.width = ((cur + 1) / total * 100) + '%';
+  }
+
+  document.getElementById('next').onclick = () => goto(cur + 1);
+  document.getElementById('prev').onclick = () => goto(cur - 1);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') goto(cur + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                   goto(cur - 1);
+  });
+
+  // init progress
+  document.getElementById('progress').style.width = (1 / total * 100) + '%';
+</script>
+</body>
+</html>
