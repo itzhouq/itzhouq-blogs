@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>微信官方原生支持 OpenClaw</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --cyan:   #00e5ff;
+      --green:  #00ff88;
+      --purple: #a855f7;
+      --orange: #ff6b35;
+      --yellow: #ffd60a;
+      --bg:     #030b14;
+      --bg2:    #071220;
+      --text:   #e8f4fd;
+      --muted:  #5a7a9a;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    /* 网格背景 */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,.035) 1px, transparent 1px);
+      background-size: 64px 64px;
+      pointer-events: none;
+    }
+
+    /* 光晕 */
+    body::after {
+      content: '';
+      position: fixed;
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(0,229,255,.10) 0%, transparent 65%);
+      top: -250px; right: -150px;
+      pointer-events: none; z-index: 0;
+    }
+
+    .deck { width: 100vw; height: 100vh; position: relative; z-index: 1; }
+
+    /* 幻灯片 */
+    .slide {
+      position: absolute; inset: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 56px 120px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity .4s ease, transform .4s ease;
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* 页码 */
+    .pager {
+      position: fixed;
+      bottom: 32px; right: 44px;
+      font-size: 1.1rem;
+      color: var(--muted);
+      letter-spacing: .1em;
+      z-index: 10;
+    }
+
+    /* 导航按钮 */
+    .nav {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex; gap: 16px;
+      z-index: 10;
+    }
+    .nav button {
+      background: rgba(0,229,255,.10);
+      border: 1px solid rgba(0,229,255,.30);
+      color: var(--cyan);
+      font-size: 1.3rem;
+      width: 48px; height: 48px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .nav button:hover { background: rgba(0,229,255,.22); }
+
+    /* 标签 */
+    .label {
+      font-size: 1.05rem;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    /* 主标题 */
+    h1 {
+      font-size: 5.2rem;
+      font-weight: 900;
+      line-height: 1.1;
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 28px;
+    }
+
+    /* 副标题 */
+    h2 {
+      font-size: 3.2rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 36px;
+    }
+    h2 .c { color: var(--cyan); }
+    h2 .g { color: var(--green); }
+    h2 .y { color: var(--yellow); }
+
+    .sub {
+      font-size: 1.75rem;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 860px;
+    }
+    .sub strong { color: var(--text); }
+
+    /* 步骤列表 */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      width: 100%;
+      max-width: 780px;
+      margin-top: 4px;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(0,229,255,.15);
+      border-radius: 16px;
+      padding: 28px 36px;
+      text-align: left;
+    }
+    .step-num {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--cyan);
+      min-width: 60px;
+      text-align: center;
+      line-height: 1;
+    }
+    .step-text {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .step-desc {
+      font-size: 1.35rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* 对比表格 */
+    .compare-table {
+      width: 100%;
+      max-width: 980px;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 1.6rem;
+      margin-top: 8px;
+    }
+    .compare-table th {
+      padding: 18px 32px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+    .compare-table th:first-child {
+      color: var(--muted);
+      text-align: left;
+    }
+    .compare-table th:last-child {
+      color: var(--cyan);
+      border-bottom: 2px solid rgba(0,229,255,.3);
+    }
+    .compare-table td {
+      padding: 18px 32px;
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .compare-table td:first-child {
+      text-align: left;
+      color: var(--muted);
+      font-size: 1.5rem;
+    }
+    .compare-table td:last-child {
+      color: var(--green);
+      font-weight: 700;
+      font-size: 1.65rem;
+    }
+
+    /* 场景卡片 */
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 22px;
+      width: 100%;
+      max-width: 1060px;
+      margin-top: 8px;
+    }
+    .card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(0,229,255,.15);
+      border-radius: 16px;
+      padding: 32px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+    }
+    .card-icon {
+      font-size: 2.8rem;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .card-body {
+      font-size: 1.35rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .card-body strong { color: var(--cyan); }
+
+    /* 产品列表 */
+    .products {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      width: 100%;
+      max-width: 980px;
+      margin-top: 8px;
+    }
+    .product {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(168,85,247,.2);
+      border-radius: 14px;
+      padding: 28px 32px;
+      text-align: left;
+    }
+    .product-name {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: var(--purple);
+      margin-bottom: 8px;
+    }
+    .product-desc {
+      font-size: 1.35rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* 信号列表 */
+    .signals {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+      max-width: 860px;
+      margin-top: 8px;
+    }
+    .signal {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(0,255,136,.15);
+      border-radius: 14px;
+      padding: 26px 36px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+    .signal-num {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--green);
+      min-width: 50px;
+      text-align: center;
+    }
+    .signal-text {
+      font-size: 1.65rem;
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .signal-text span { color: var(--green); font-weight: 700; }
+
+    /* 标签行 */
+    .tags {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 32px;
+    }
+    .tag {
+      padding: 10px 24px;
+      border-radius: 999px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+    }
+    .tag-cyan  { background: rgba(0,229,255,.12); color: var(--cyan);   border: 1px solid rgba(0,229,255,.3); }
+    .tag-green { background: rgba(0,255,136,.10); color: var(--green);  border: 1px solid rgba(0,255,136,.25); }
+    .tag-purple{ background: rgba(168,85,247,.12);color: var(--purple); border: 1px solid rgba(168,85,247,.3); }
+
+    /* 视频号链接按钮 */
+    .video-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 36px;
+      padding: 16px 36px;
+      background: linear-gradient(135deg, rgba(0,229,255,.12), rgba(168,85,247,.12));
+      border: 1px solid rgba(0,229,255,.35);
+      border-radius: 14px;
+      color: var(--cyan);
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-decoration: none;
+      letter-spacing: .04em;
+      transition: background .2s, border-color .2s, transform .15s;
+    }
+    .video-link:hover {
+      background: linear-gradient(135deg, rgba(0,229,255,.22), rgba(168,85,247,.22));
+      border-color: rgba(0,229,255,.65);
+      transform: translateY(-2px);
+    }
+    .video-link .icon { font-size: 1.8rem; }
+
+    /* 大数字高亮 */
+    .big-stat {
+      font-size: 7rem;
+      font-weight: 900;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--yellow) 0%, var(--orange) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    /* 结尾引用 */
+    .quote {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.6;
+      max-width: 780px;
+      border-left: 4px solid var(--cyan);
+      padding-left: 32px;
+      text-align: left;
+    }
+    .quote em { color: var(--cyan); font-style: normal; }
+  </style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- 第 1 页：封面 -->
+  <div class="slide active">
+    <div class="label">Breaking News · 2026</div>
+    <h1>微信官方<br>原生支持 OpenClaw</h1>
+    <p class="sub">
+      告别第三方折腾方案<br>
+      <strong>官方插件 ClawBot 正式上线</strong>，你的"龙虾"好友来了
+    </p>
+    <div class="tags" style="margin-top:40px">
+      <span class="tag tag-cyan">微信 iOS 8.0.70+</span>
+      <span class="tag tag-green">官方认证</span>
+      <span class="tag tag-purple">原生通道</span>
+    </div>
+  </div>
+
+  <!-- 第 2 页：三步接入 -->
+  <div class="slide">
+    <div class="label">极简上手</div>
+    <h2>三步完成接入<span class="c">，不到 5 分钟</span></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div>
+          <div class="step-text">更新微信</div>
+          <div class="step-desc">确保版本 iOS 8.0.70 及以上</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div>
+          <div class="step-text">复制命令 / 扫码</div>
+          <div class="step-desc">一行指令或扫描二维码直连</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div>
+          <div class="step-text">连接你的 OpenClaw</div>
+          <div class="step-desc">搞定！通讯录里多了一个 AI 好友</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第 3 页：对比表 -->
+  <div class="slide">
+    <div class="label">官方 vs 野路子</div>
+    <h2>这次<span class="c">官方下场</span>，彻底不同</h2>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>痛点</th>
+          <th>微信官方 ClawBot</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>担心封号风险</td>
+          <td>✅ 官方认证，安心用</td>
+        </tr>
+        <tr>
+          <td>配置复杂劝退</td>
+          <td>✅ 一行命令，秒连</td>
+        </tr>
+        <tr>
+          <td>消息延迟感人</td>
+          <td>✅ 原生通道，即时响应</td>
+        </tr>
+        <tr>
+          <td>功能受限</td>
+          <td>✅ 文字 / 图片 / 文件 / 语音</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 第 4 页：实测场景 -->
+  <div class="slide">
+    <div class="label">真实体验</div>
+    <h2>三个场景<span class="g">，一个字：顺</span></h2>
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <div class="card-title">查资料</div>
+        <div class="card-body">
+          微信里直接问热点新闻<br>
+          <strong>30 秒</strong>返回整理好的列表<br>
+          无需切 App
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📄</div>
+        <div class="card-title">处理文件</div>
+        <div class="card-body">
+          转发 PDF 给 ClawBot<br>
+          <strong>自动提炼要点</strong><br>
+          告别几十页啃文档
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎙️</div>
+        <div class="card-title">随手记</div>
+        <div class="card-body">
+          语音发送灵感<br>
+          <strong>整理成结构化笔记</strong><br>
+          想到就说，立刻搞定
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第 5 页：腾讯全阵容 -->
+  <div class="slide">
+    <div class="label">腾讯生态</div>
+    <h2>"养虾"<span class="y">全阵容</span>，应有尽有</h2>
+    <div class="products">
+      <div class="product">
+        <div class="product-name">ClawBot</div>
+        <div class="product-desc">微信官方插件，今天的主角<br>普通用户首选</div>
+      </div>
+      <div class="product">
+        <div class="product-name">Lighthouse</div>
+        <div class="product-desc">腾讯云端方案<br>企业版 Claw Pro</div>
+      </div>
+      <div class="product">
+        <div class="product-name">WorkBuddy</div>
+        <div class="product-desc">桌面端工具<br>头像 → Claw 设置 → 扫码直连</div>
+      </div>
+      <div class="product">
+        <div class="product-name">QClaw</div>
+        <div class="product-desc">本地部署版<br>极客玩家自由折腾</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第 6 页：行业信号 -->
+  <div class="slide">
+    <div class="label">行业视角</div>
+    <h2>三个<span class="c">值得琢磨的信号</span></h2>
+    <div class="signals">
+      <div class="signal">
+        <div class="signal-num">①</div>
+        <div class="signal-text">大厂<span>认真做 AI 入口</span>——微信把 OpenClaw 送进 13 亿用户口袋</div>
+      </div>
+      <div class="signal">
+        <div class="signal-num">②</div>
+        <div class="signal-text"><span>AI Agent 真正落地</span>——不再是概念，而是通讯录里随时可聊的好友</div>
+      </div>
+      <div class="signal">
+        <div class="signal-num">③</div>
+        <div class="signal-text"><span>竞争格局变天</span>——当微信原生集成 AI，独立 AI 助手 App 压力倍增</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第 7 页：大数据 -->
+  <div class="slide">
+    <div class="label">规模</div>
+    <div class="big-stat">13 亿</div>
+    <h2 style="font-size:2.8rem">微信用户，<span class="c">人手一只"龙虾"</span></h2>
+    <p class="sub" style="margin-top:24px">
+      这不是边缘功能测试<br>
+      <strong>这是核心产品更新</strong>，AI 普及的新起点
+    </p>
+  </div>
+
+  <!-- 第 8 页：结语 -->
+  <div class="slide">
+    <div class="label">写在最后</div>
+    <div class="quote">
+      它终于走进了<em>普通人每天必用的工具</em>里。<br><br>
+      不需要懂 Prompt Engineering，<br>
+      不需要研究模型参数，<br>
+      就在微信里，<em>像跟朋友聊天一样</em>。
+    </div>
+    <p class="sub" style="margin-top:40px;text-align:center">
+      这可能才是 AI 真正普及的样子。
+    </p>
+    <div class="tags" style="margin-top:32px">
+      <span class="tag tag-cyan">你的微信，更新了吗？</span>
+    </div>
+  </div>
+
+</div><!-- /.deck -->
+
+<!-- 导航 -->
+<div class="pager"><span id="cur">1</span> / <span id="tot"></span></div>
+<div class="nav">
+  <button id="prev" onclick="go(-1)">←</button>
+  <button id="next" onclick="go(1)">→</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let cur = 0;
+  document.getElementById('tot').textContent = slides.length;
+
+  function show(n) {
+    slides[cur].classList.remove('active');
+    cur = (n + slides.length) % slides.length;
+    slides[cur].classList.add('active');
+    document.getElementById('cur').textContent = cur + 1;
+  }
+  function go(d) { show(cur + d); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+  });
+</script>
+</body>
+</html>
