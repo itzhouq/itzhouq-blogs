@@ -12,6 +12,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `styles.css` — 全局样式，供 `index.html` 使用；使用 CSS 变量定义颜色、字体、间距系统
 - `mimo-v2-ppt.html` — Xiaomi MiMo-V2 发布主题演示文稿（自包含，内联样式）
 - `superpowers-ppt.html` — Superpowers AI 技能系统演示文稿（自包含，内联样式）
+- `openclaw-wechat-ppt.html` — OpenClaw 微信插件发布主题演示文稿（自包含，内联样式）
+- `ads.txt` — 广告投放配置文件
+- `视频号.jpg` — 微信视频号二维码图片
 
 ## 架构约定
 
@@ -24,6 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **博客首页（`index.html` + `styles.css`）：**
 - CSS 变量定义在 `:root` 中，颜色系统、字体、间距统一管理
 - 容器最大宽度 `--container-max: 800px`，适配阅读体验
+- 使用 Google Fonts（Inter 和 JetBrains Mono）
 
 ## 开发与预览
 
@@ -33,6 +37,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 open index.html
 open mimo-v2-ppt.html
 open superpowers-ppt.html
+open openclaw-wechat-ppt.html
 ```
 
 新增文章时：在 `index.html` 的文章列表区域（`.articles` section）添加 `<article class="article-item">` 条目，并在 `index.html` 的精选区域（`.featured` section）更新精选卡片。
+
+新增演示文稿时：参考现有 `*-ppt.html` 文件，使用内联 `<style>` 和 `<script>`，通过 `.slide` / `.slide.active` 类实现幻灯片切换。
