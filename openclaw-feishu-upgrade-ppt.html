@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenClaw飞书插件升级指南</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --cyan:   #00e5ff;
+      --green:  #00ff88;
+      --purple: #a855f7;
+      --orange: #ff6b35;
+      --yellow: #ffd60a;
+      --bg:     #030b14;
+      --bg2:    #071220;
+      --text:   #e8f4fd;
+      --muted:  #5a7a9a;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,.035) 1px, transparent 1px);
+      background-size: 64px 64px;
+      pointer-events: none;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(0,229,255,.10) 0%, transparent 65%);
+      top: -250px; right: -150px;
+      pointer-events: none; z-index: 0;
+    }
+
+    .deck { width: 100vw; height: 100vh; position: relative; z-index: 1; }
+
+    .slide {
+      position: absolute; inset: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 56px 120px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity .4s ease, transform .4s ease;
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .pager {
+      position: fixed;
+      bottom: 32px; right: 44px;
+      font-size: 1.3rem;
+      color: var(--muted);
+      letter-spacing: .1em;
+      z-index: 10;
+    }
+
+    .nav {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex; gap: 16px;
+      z-index: 10;
+    }
+    .nav button {
+      background: rgba(0,229,255,.10);
+      border: 1px solid rgba(0,229,255,.30);
+      color: var(--cyan);
+      font-size: 1.5rem;
+      width: 52px; height: 52px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .nav button:hover { background: rgba(0,229,255,.22); }
+
+    .label {
+      font-size: 1.2rem;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 5.5rem;
+      font-weight: 900;
+      line-height: 1.1;
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 28px;
+    }
+
+    h2 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 40px;
+    }
+    h2 .c { color: var(--cyan); }
+    h2 .g { color: var(--green); }
+    h2 .y { color: var(--yellow); }
+
+    .sub {
+      font-size: 2rem;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 900px;
+    }
+    .sub strong { color: var(--text); }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      width: 100%;
+      max-width: 900px;
+      margin-top: 4px;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(0,229,255,.15);
+      border-radius: 16px;
+      padding: 28px 36px;
+      text-align: left;
+    }
+    .step-num {
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--cyan);
+      min-width: 60px;
+      text-align: center;
+      line-height: 1;
+    }
+    .step-text {
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .step-desc {
+      font-size: 1.5rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .step-code {
+      font-size: 1.4rem;
+      color: var(--green);
+      background: rgba(0,255,136,.08);
+      padding: 4px 12px;
+      border-radius: 6px;
+      margin-top: 8px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .compare-table {
+      width: 100%;
+      max-width: 1100px;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 1.7rem;
+      margin-top: 8px;
+    }
+    .compare-table th {
+      padding: 18px 28px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+    .compare-table th:first-child {
+      color: var(--muted);
+      text-align: left;
+    }
+    .compare-table th:last-child {
+      color: var(--cyan);
+      border-bottom: 2px solid rgba(0,229,255,.3);
+    }
+    .compare-table td {
+      padding: 16px 28px;
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .compare-table td:first-child {
+      text-align: left;
+      color: var(--muted);
+      font-size: 1.6rem;
+    }
+    .compare-table td:last-child {
+      color: var(--green);
+      font-weight: 700;
+      font-size: 1.75rem;
+    }
+    .compare-table td:nth-last-child(2) {
+      color: var(--orange);
+      font-weight: 500;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 8px;
+    }
+    .card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(0,229,255,.15);
+      border-radius: 16px;
+      padding: 36px 28px;
+      position: relative;
+      overflow: hidden;
+      text-align: left;
+    }
+    .card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+    }
+    .card-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+    }
+    .card-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 12px;
+    }
+    .card-body {
+      font-size: 1.5rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .card-body strong { color: var(--cyan); }
+
+    .warning-box {
+      background: rgba(255,107,53,.10);
+      border: 1px solid rgba(255,107,53,.30);
+      border-radius: 14px;
+      padding: 24px 36px;
+      max-width: 900px;
+      margin-top: 8px;
+      text-align: left;
+    }
+    .warning-box .warn-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--orange);
+      margin-bottom: 12px;
+    }
+    .warning-box .warn-text {
+      font-size: 1.6rem;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .tags {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 36px;
+    }
+    .tag {
+      padding: 12px 28px;
+      border-radius: 999px;
+      font-size: 1.4rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+    }
+    .tag-cyan  { background: rgba(0,229,255,.12); color: var(--cyan);   border: 1px solid rgba(0,229,255,.3); }
+    .tag-green { background: rgba(0,255,136,.10); color: var(--green);  border: 1px solid rgba(0,255,136,.25); }
+    .tag-purple{ background: rgba(168,85,247,.12);color: var(--purple); border: 1px solid rgba(168,85,247,.3); }
+
+    .command-box {
+      background: rgba(0,255,136,.06);
+      border: 1px solid rgba(0,255,136,.20);
+      border-radius: 14px;
+      padding: 28px 40px;
+      max-width: 900px;
+      margin-top: 8px;
+      text-align: left;
+      width: 100%;
+    }
+    .command-line {
+      font-size: 1.7rem;
+      color: var(--green);
+      font-family: 'JetBrains Mono', 'Consolas', monospace;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+    .command-line:last-child { margin-bottom: 0; }
+    .command-comment {
+      color: var(--muted);
+      font-size: 1.4rem;
+    }
+
+    .quote {
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.7;
+      max-width: 880px;
+      border-left: 4px solid var(--cyan);
+      padding-left: 36px;
+      text-align: left;
+    }
+    .quote em { color: var(--cyan); font-style: normal; }
+
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin: 32px 0;
+    }
+    .flow-item {
+      background: rgba(0,229,255,.08);
+      border: 1px solid rgba(0,229,255,.25);
+      border-radius: 12px;
+      padding: 18px 32px;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+    .flow-arrow-icon {
+      font-size: 2.5rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- 第 1 页：封面 -->
+  <div class="slide active">
+    <div class="label">保姆级教程 · 2026</div>
+    <h1>OpenClaw飞书插件<br>升级指南</h1>
+    <p class="sub">
+      社区插件 → 官方插件 → 流式输出<br>
+      <strong>三步完成，体验质的飞跃</strong>
+    </p>
+    <div class="tags">
+      <span class="tag tag-cyan">卸载</span>
+      <span class="tag tag-green">安装</span>
+      <span class="tag tag-purple">流式输出</span>
+    </div>
+    <a href="https://mp.weixin.qq.com/s/eyK8nRA4dIGcXmBtBxbwXg" target="_blank" class="video-link" style="margin-top:40px">
+      📖 阅读完整文章
+    </a>
+  </div>
+
+  <!-- 第 2 页：为什么升级 -->
+  <div class="slide">
+    <div class="label">核心差异</div>
+    <h2>为什么必须升级<span class="c">到官方插件</span></h2>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>对比维度</th>
+          <th>社区版</th>
+          <th>官方插件</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>维护主体</td>
+          <td>社区/个人</td>
+          <td>飞书官方团队</td>
+        </tr>
+        <tr>
+          <td>权限能力</td>
+          <td>仅基础IM消息</td>
+          <td>OAuth读写文档/表格/日历</td>
+        </tr>
+        <tr>
+          <td>流式输出</td>
+          <td>体验卡顿</td>
+          <td>边生成边展示，丝滑交互</td>
+        </tr>
+        <tr>
+          <td>稳定性</td>
+          <td>易崩溃</td>
+          <td>官方维护，快速迭代</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 第 3 页：操作全流程 -->
+  <div class="slide">
+    <div class="label">三步曲</div>
+    <h2>操作全流程<span class="g">，一步不落</span></h2>
+    <div class="flow-arrow">
+      <div class="flow-item">卸载社区版</div>
+      <div class="flow-arrow-icon">→</div>
+      <div class="flow-item">安装官方版</div>
+      <div class="flow-arrow-icon">→</div>
+      <div class="flow-item">配置流式输出</div>
+    </div>
+    <div class="warning-box">
+      <div class="warn-title">⚠️ 重点提醒</div>
+      <div class="warn-text">必须先<strong>彻底卸载社区版</strong>，再安装官方版，否则会出现插件冲突、授权失败</div>
+    </div>
+  </div>
+
+  <!-- 第 4 页：第一步 - 卸载 -->
+  <div class="slide">
+    <div class="label">第一步</div>
+    <h2>彻底卸载<span class="c">社区版插件</span></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-text">备份配置文件</div>
+          <div class="step-code">cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.mybak</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-text">停止网关服务</div>
+          <div class="step-code">openclaw gateway stop</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-text">卸载插件主体</div>
+          <div class="step-code">openclaw plugins disable feishu</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div>
+          <div class="step-text">清理残留文件</div>
+          <div class="step-code">rm -rf ~/.openclaw/extensions/feishu ~/.openclaw/feishu</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div>
+          <div class="step-text">删除 feishu 配置</div>
+          <div class="step-desc">手动删除 openclaw.json 中所有 feishu 相关配置</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第 5 页：第二步 - 安装 -->
+  <div class="slide">
+    <div class="label">第二步</div>
+    <h2>安装<span class="g">飞书官方插件</span></h2>
+    <div class="command-box" style="max-width: 800px">
+      <div class="command-line">npx -y @larksuite/openclaw-lark install</div>
+      <div class="command-comment" style="margin-top: 16px">扫码后自动配置权限，重启网关生效</div>
+    </div>
+    <p class="sub" style="margin-top: 36px">
+      <strong>官方命令，安全可靠</strong><br>
+      自动创建机器人，权限自动配置
+    </p>
+  </div>
+
+  <!-- 第 6 页：第三步 - 流式输出 -->
+  <div class="slide">
+    <div class="label">第三步</div>
+    <h2>配置<span class="c">流式输出</span></h2>
+    <p class="sub" style="margin-bottom: 32px">官方插件默认未开启，手动配置仅需 <strong>3 条命令</strong></p>
+    <div class="command-box">
+      <div class="command-line">openclaw config set channels.feishu.streaming false</div>
+      <div class="command-line">openclaw config set channels.feishu.footer.elapsed true <span class="command-comment">// 开启耗时</span></div>
+      <div class="command-line">openclaw config set channels.feishu.footer.status true <span class="command-comment">// 开启状态展示</span></div>
+    </div>
+    <p class="sub" style="margin-top: 32px">
+      <strong>重启网关：</strong><code style="color: var(--green); background: rgba(0,255,136,.08); padding: 4px 12px; border-radius: 6px;">openclaw gateway restart</code>
+    </p>
+  </div>
+
+  <!-- 第 7 页：升级后的能力 -->
+  <div class="slide">
+    <div class="label">升级后</div>
+    <h2>解锁<span class="g">飞书办公进阶场景</span></h2>
+    <div class="cards">
+      <div class="card">
+        <div class="card-icon">📋</div>
+        <div class="card-title">AI 会议纪要</div>
+        <div class="card-body">
+          会议结束后 AI 自动提取要点<br>
+          <strong>生成结构化文档</strong><br>
+          同步到飞书文档
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <div class="card-title">多维表格自动化</div>
+        <div class="card-body">
+          AI 批量处理表格数据<br>
+          <strong>自动填充/筛选/统计</strong><br>
+          减少手动操作
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-icon">✅</div>
+        <div class="card-title">任务自动管理</div>
+        <div class="card-body">
+          发送指令让 AI 创建任务<br>
+          <strong>分配负责人/截止时间</strong><br>
+          同步到团队日历
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第 8 页：结语 -->
+  <div class="slide">
+    <div class="label">写在最后</div>
+    <div class="quote">
+      飞书官方插件的推出，是提升<br>
+      <em>飞书 + AI 协作体验</em> 的关键一步<br><br>
+      告别社区版痛点，享受官方级稳定性<br>
+      <em>流式输出</em> 让交互体验直接拉满
+    </div>
+    <div class="tags" style="margin-top: 48px">
+      <span class="tag tag-cyan">有问题欢迎留言交流</span>
+      <span class="tag tag-green">觉得有用记得转发</span>
+    </div>
+    <a href="https://mp.weixin.qq.com/s/eyK8nRA4dIGcXmBtBxbwXg" target="_blank" class="video-link" style="margin-top:32px">
+      📖 阅读完整文章
+    </a>
+  </div>
+
+</div>
+
+<div class="pager"><span id="cur">1</span> / <span id="tot"></span></div>
+<div class="nav">
+  <button id="prev" onclick="go(-1)">←</button>
+  <button id="next" onclick="go(1)">→</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let cur = 0;
+  document.getElementById('tot').textContent = slides.length;
+
+  function show(n) {
+    slides[cur].classList.remove('active');
+    cur = (n + slides.length) % slides.length;
+    slides[cur].classList.add('active');
+    document.getElementById('cur').textContent = cur + 1;
+  }
+  function go(d) { show(cur + d); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+  });
+</script>
+</body>
+</html>
