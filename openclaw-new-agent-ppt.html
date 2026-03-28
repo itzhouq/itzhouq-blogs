@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OpenClaw New Agent - 快速批量创建飞书多机器人</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --cyan:   #00e5ff;
+      --green:  #00ff88;
+      --purple: #a855f7;
+      --orange: #ff6b35;
+      --red:    #ff4757;
+      --bg:     #030b14;
+      --bg2:    #071220;
+      --text:   #e8f4fd;
+      --muted:  #5a7a9a;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,.035) 1px, transparent 1px);
+      background-size: 64px 64px;
+      pointer-events: none;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(168,85,247,.08) 0%, transparent 65%);
+      top: -250px; left: -150px;
+      pointer-events: none; z-index: 0;
+    }
+
+    .deck { width: 100vw; height: 100vh; position: relative; z-index: 1; }
+
+    .slide {
+      position: absolute; inset: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 56px 120px;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity .4s ease, transform .4s ease;
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .pager {
+      position: fixed;
+      bottom: 32px; right: 44px;
+      font-size: 1.4rem;
+      color: var(--muted);
+      letter-spacing: .1em;
+      z-index: 10;
+    }
+
+    .nav {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex; gap: 16px;
+      z-index: 10;
+    }
+    .nav button {
+      background: rgba(0,229,255,.10);
+      border: 1px solid rgba(0,229,255,.30);
+      color: var(--cyan);
+      font-size: 1.6rem;
+      width: 56px; height: 56px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .nav button:hover { background: rgba(0,229,255,.22); }
+
+    .label {
+      font-size: 1.4rem;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 5rem;
+      font-weight: 900;
+      line-height: 1.1;
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 32px;
+    }
+
+    h2 {
+      font-size: 3.6rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 44px;
+    }
+    h2 .c { color: var(--cyan); }
+    h2 .g { color: var(--green); }
+    h2 .p { color: var(--purple); }
+    h2 .o { color: var(--orange); }
+
+    .sub {
+      font-size: 2.2rem;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 960px;
+    }
+    .sub strong { color: var(--text); }
+
+    .cover-logos {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 60px;
+      margin-bottom: 32px;
+    }
+    .cover-logos img {
+      height: 100px;
+    }
+    .cover-logos .plus {
+      font-size: 3rem;
+      color: var(--muted);
+    }
+
+    .tags {
+      display: flex;
+      gap: 18px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 40px;
+    }
+    .tag {
+      padding: 14px 32px;
+      border-radius: 999px;
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: .05em;
+    }
+    .tag-cyan   { background: rgba(0,229,255,.12); color: var(--cyan);   border: 1px solid rgba(0,229,255,.3); }
+    .tag-green  { background: rgba(0,255,136,.10); color: var(--green);  border: 1px solid rgba(0,255,136,.25); }
+    .tag-purple { background: rgba(168,85,247,.12);color: var(--purple); border: 1px solid rgba(168,85,247,.3); }
+    .tag-orange { background: rgba(255,107,53,.10);color: var(--orange); border: 1px solid rgba(255,107,53,.25); }
+    .tag-red    { background: rgba(255,71,87,.12); color: var(--red);    border: 1px solid rgba(255,71,87,.3); }
+
+    .pain-point {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      width: 100%;
+      max-width: 900px;
+      margin-top: 8px;
+    }
+    .pain-item {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      background: rgba(255,71,87,.08);
+      border: 1px solid rgba(255,71,87,.25);
+      border-radius: 16px;
+      padding: 28px 36px;
+      text-align: left;
+    }
+    .pain-icon {
+      font-size: 2.8rem;
+      min-width: 48px;
+    }
+    .pain-text {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--red);
+    }
+    .pain-desc {
+      font-size: 1.5rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .solution-box {
+      background: rgba(0,255,136,.06);
+      border: 1px solid rgba(0,255,136,.25);
+      border-radius: 20px;
+      padding: 48px 56px;
+      max-width: 1000px;
+      margin-top: 16px;
+      text-align: left;
+    }
+    .solution-title {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: var(--green);
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .solution-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .solution-feature {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 1.8rem;
+      color: var(--text);
+    }
+    .solution-feature .icon {
+      font-size: 2rem;
+      color: var(--green);
+    }
+
+    .steps-img {
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 16px;
+      border-radius: 16px;
+      border: 2px solid rgba(0,229,255,.2);
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    }
+
+    .highlight-box {
+      background: rgba(0,229,255,.08);
+      border: 1px solid rgba(0,229,255,.30);
+      border-radius: 16px;
+      padding: 32px 48px;
+      max-width: 900px;
+      margin-top: 24px;
+      text-align: left;
+    }
+    .highlight-box .text {
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: var(--cyan);
+      text-align: center;
+    }
+
+    .flow-arrow {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin: 36px 0;
+    }
+    .flow-item {
+      background: rgba(168,85,247,.10);
+      border: 1px solid rgba(168,85,247,.30);
+      border-radius: 14px;
+      padding: 20px 32px;
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: var(--purple);
+    }
+    .flow-arrow-icon {
+      font-size: 2.4rem;
+      color: var(--muted);
+    }
+
+    .get-box {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 20px;
+      padding: 48px 56px;
+      max-width: 900px;
+      margin-top: 24px;
+      text-align: left;
+    }
+    .get-title {
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 32px;
+      text-align: center;
+    }
+    .get-method {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .get-method .num {
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: var(--cyan);
+      min-width: 48px;
+    }
+    .get-method .content {
+      font-size: 1.8rem;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .get-method .content .link {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .github-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 32px;
+      padding: 18px 36px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 1.6rem;
+      text-decoration: none;
+      transition: background .2s;
+    }
+    .github-link:hover {
+      background: rgba(255,255,255,.10);
+    }
+
+    .section-num {
+      position: absolute;
+      top: 40px;
+      left: 60px;
+      font-size: 1.2rem;
+      color: var(--muted);
+      letter-spacing: .1em;
+    }
+
+    .big-text {
+      font-size: 3.2rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.4;
+      max-width: 1000px;
+    }
+    .big-text .highlight {
+      color: var(--cyan);
+    }
+
+    .cta-box {
+      background: linear-gradient(135deg, rgba(168,85,247,.20) 0%, rgba(0,229,255,.20) 100%);
+      border: 2px solid rgba(168,85,247,.40);
+      border-radius: 20px;
+      padding: 48px 64px;
+      max-width: 900px;
+      margin-top: 32px;
+      text-align: center;
+    }
+    .cta-box .title {
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .cta-box .desc {
+      font-size: 2rem;
+      color: var(--muted);
+    }
+    .cta-box .desc strong {
+      color: var(--green);
+    }
+  </style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- 第 1 页：封面 -->
+  <div class="slide active">
+    <div class="cover-logos">
+      <img src="feishu.png" alt="飞书">
+      <span class="plus">+</span>
+      <img src="openclaw-color.svg" alt="OpenClaw">
+    </div>
+    <h1>OpenClaw New Agent</h1>
+    <p class="sub">
+      <strong style="color: var(--cyan); font-size: 2.8rem;">快速批量创建飞书多机器人</strong><br><br>
+      不用手动改配置，体验拉满<br>
+      <strong>开源免费 · 彻底告别繁琐易出错</strong>
+    </p>
+    <div class="tags">
+      <span class="tag tag-purple">多账号支持</span>
+      <span class="tag tag-cyan">自动化配置</span>
+      <span class="tag tag-green">开源免费</span>
+    </div>
+</div>
+
+  <!-- 第 2 页：痛点 -->
+  <div class="slide">
+    <div class="label">问题背景</div>
+    <h2>手动配置飞书机器人<span class="o"> 繁琐易出错</span></h2>
+    <div class="pain-point">
+      <div class="pain-item">
+        <span class="pain-icon">😫</span>
+        <div>
+          <div class="pain-text">配置文件复杂</div>
+          <div class="pain-desc">JSON 格式、手动修改，一不小心就格式错误</div>
+        </div>
+      </div>
+      <div class="pain-item">
+        <span class="pain-icon">😓</span>
+        <div>
+          <div class="pain-text">多账号管理混乱</div>
+          <div class="pain-desc">每次新建机器人都要重新改配置，容易覆盖已有配置</div>
+        </div>
+      </div>
+      <div class="pain-item">
+        <span class="pain-icon">😱</span>
+        <div>
+          <div class="pain-text">操作不可逆</div>
+          <div class="pain-desc">改错了不知道如何回滚，甚至丢失原有配置</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第 3 页：解决方案 -->
+  <div class="slide">
+    <div class="label">解决方案</div>
+    <h2>安装 Skills 后<span class="g"> 发消息给机器人</span></h2>
+    <p class="sub" style="max-width: 800px;">
+      <strong style="color: var(--cyan); font-size: 2.8rem;">跟机器人发消息，就能引导你配置新的机器人</strong><br><br>
+      <span style="color: var(--text);">体验拉满 · 零门槛 · 自动化</span>
+    </p>
+    <div class="solution-box">
+      <div class="solution-title">✨ New Agent Skills 能做什么</div>
+      <div class="solution-features">
+        <div class="solution-feature">
+          <span class="icon">✅</span>
+          <span>自动收集配置信息</span>
+        </div>
+        <div class="solution-feature">
+          <span class="icon">✅</span>
+          <span>自动备份原有配置</span>
+        </div>
+        <div class="solution-feature">
+          <span class="icon">✅</span>
+          <span>自动创建独立工作区</span>
+        </div>
+        <div class="solution-feature">
+          <span class="icon">✅</span>
+          <span>自动写入配置文件</span>
+        </div>
+        <div class="solution-feature">
+          <span class="icon">✅</span>
+          <span>自动验证部署结果</span>
+        </div>
+        <div class="solution-feature">
+          <span class="icon">✅</span>
+          <span>全程提示引导</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第 4 页：操作流程 -->
+  <div class="slide">
+    <div class="label">操作流程</div>
+    <h2>五步完成<span class="p"> 新机器人创建</span></h2>
+    <div class="flow-arrow">
+      <div class="flow-item">发消息</div>
+      <div class="flow-arrow-icon">→</div>
+      <div class="flow-item">收集配置</div>
+      <div class="flow-arrow-icon">→</div>
+      <div class="flow-item">自动备份</div>
+      <div class="flow-arrow-icon">→</div>
+      <div class="flow-item">创建工作区</div>
+      <div class="flow-arrow-icon">→</div>
+      <div class="flow-item">验证完成</div>
+    </div>
+    <p class="sub" style="margin-top: 32px;">
+      <strong>跟着提示走，就能完成</strong><br>
+      不需要记忆任何命令
+    </p>
+    <a href="https://github.com/itzhouq/openclaw-new-agent" target="_blank" class="github-link" style="margin-top: 32px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      github.com/itzhouq/openclaw-new-agent
+    </a>
+  </div>
+
+  <!-- 第 5 页：获取方式 -->
+  <div class="slide" style="padding-top: 36px;">
+    <div class="label">获取方式</div>
+    <h2 style="font-size: 2.8rem; margin-bottom: 20px;">如何<span class="g"> 获得这个 Skills</span></h2>
+    <img src="install-openclaw-new-agent.png" alt="安装教程" style="max-width: 55%; border-radius: 12px; border: 2px solid rgba(0,229,255,.2); box-shadow: 0 8px 32px rgba(0,0,0,.4);">
+    <a href="https://github.com/itzhouq/openclaw-new-agent" target="_blank" class="github-link" style="margin-top: 24px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      github.com/itzhouq/openclaw-new-agent
+    </a>
+  </div>
+
+</div>
+
+<div class="pager"><span id="cur">1</span> / <span id="tot"></span></div>
+<div class="nav">
+  <button id="prev" onclick="go(-1)">←</button>
+  <button id="next" onclick="go(1)">→</button>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  let cur = 0;
+  document.getElementById('tot').textContent = slides.length;
+
+  function show(n) {
+    slides[cur].classList.remove('active');
+    cur = (n + slides.length) % slides.length;
+    slides[cur].classList.add('active');
+    document.getElementById('cur').textContent = cur + 1;
+  }
+  function go(d) { show(cur + d); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+  });
+</script>
+</body>
+</html>
