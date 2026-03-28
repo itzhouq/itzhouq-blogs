@@ -379,6 +379,56 @@
     .cta-box .desc strong {
       color: var(--green);
     }
+
+    .install-box {
+      background: rgba(0,229,255,.06);
+      border: 1px solid rgba(0,229,255,.25);
+      border-radius: 20px;
+      padding: 40px 48px;
+      max-width: 860px;
+      margin-top: 20px;
+      text-align: left;
+    }
+    .install-method {
+      margin-bottom: 32px;
+    }
+    .install-method:last-child {
+      margin-bottom: 0;
+    }
+    .install-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+    .install-title .badge {
+      background: rgba(0,255,136,.15);
+      color: var(--green);
+      border: 1px solid rgba(0,255,136,.3);
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+    .install-code {
+      background: rgba(0,0,0,.4);
+      border: 1px solid rgba(0,229,255,.2);
+      border-radius: 10px;
+      padding: 18px 24px;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      font-size: 1.5rem;
+      color: var(--cyan);
+      line-height: 1.6;
+    }
+    .install-note {
+      font-size: 1.3rem;
+      color: var(--muted);
+      margin-top: 10px;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -502,7 +552,23 @@
   <div class="slide" style="padding-top: 36px;">
     <div class="label">获取方式</div>
     <h2 style="font-size: 2.8rem; margin-bottom: 20px;">如何<span class="g"> 获得这个 Skills</span></h2>
-    <img src="install-openclaw-new-agent.png" alt="安装教程" style="max-width: 55%; border-radius: 12px; border: 2px solid rgba(0,229,255,.2); box-shadow: 0 8px 32px rgba(0,0,0,.4);">
+    <div class="install-box">
+      <div class="install-method">
+        <div class="install-title">
+          <span class="badge">推荐</span>
+          <span>方式一：clawhub 安装</span>
+        </div>
+        <div class="install-code">npx clawhub@latest install openclaw-new-agent</div>
+        <div class="install-note">安装到 ~/.openclaw/workspace/skills</div>
+      </div>
+      <div class="install-method">
+        <div class="install-title">
+          <span>方式二：手动下载</span>
+        </div>
+        <div class="install-code">git clone https://github.com/itzhouq/openclaw-new-agent.git</div>
+        <div class="install-note">或直接从 GitHub 下载 SKILL.md，手动放入 ~/.openclaw/openclaw/skills/ 目录</div>
+      </div>
+    </div>
     <a href="https://github.com/itzhouq/openclaw-new-agent" target="_blank" class="github-link" style="margin-top: 24px;">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
       github.com/itzhouq/openclaw-new-agent
