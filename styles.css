@@ -542,6 +542,36 @@ body {
     background-color: rgba(0, 0, 0, 0.2);
 }
 
+/* 视频标签 */
+.tag-video {
+    background-color: rgba(255, 102, 0, 0.1);
+    color: #ff6600;
+}
+
+/* 文章视频样式 */
+.article-video .article-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.video-cover-link {
+    display: block;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.video-cover {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.2s ease;
+}
+
+.video-cover-link:hover .video-cover {
+    transform: scale(1.02);
+}
+
 /* 打印样式 */
 @media print {
     .header,

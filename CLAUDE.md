@@ -13,8 +13,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `mimo-v2-ppt.html` — Xiaomi MiMo-V2 发布主题演示文稿（自包含，内联样式）
 - `superpowers-ppt.html` — Superpowers AI 技能系统演示文稿（自包含，内联样式）
 - `openclaw-wechat-ppt.html` — OpenClaw 微信插件发布主题演示文稿（自包含，内联样式）
+- `openclaw-feishu-upgrade-ppt.html` — OpenClaw 飞书升级主题演示文稿（自包含，内联样式）
 - `ads.txt` — 广告投放配置文件
 - `视频号.jpg` — 微信视频号二维码图片
+- `assets/` — 静态资源目录（封面图等）
 
 ## 架构约定
 
@@ -43,3 +45,27 @@ open openclaw-wechat-ppt.html
 新增文章时：在 `index.html` 的文章列表区域（`.articles` section）添加 `<article class="article-item">` 条目，并在 `index.html` 的精选区域（`.featured` section）更新精选卡片。
 
 新增演示文稿时：参考现有 `*-ppt.html` 文件，使用内联 `<style>` 和 `<script>`，通过 `.slide` / `.slide.active` 类实现幻灯片切换。
+
+### 视频维护标准
+
+视频以封面图 + 链接方式嵌入 B 站播放，不直接嵌入 iframe。
+
+**视频条目 HTML 结构：**
+```html
+<article class="article-item article-video">
+    <span class="article-tag tag-video">视频</span>
+    <div class="article-content">
+        <h3 class="article-title">
+            <a href="https://www.bilibili.com/video/BVxxxx" target="_blank">标题</a>
+        </h3>
+        <a href="https://www.bilibili.com/video/BVxxxx" target="_blank" class="video-cover-link">
+            <img src="assets/封面图文件名.png" alt="标题" class="video-cover">
+        </a>
+        <span class="article-date">YYYY年MM月DD日</span>
+    </div>
+</article>
+```
+
+**命名规范：**
+- 封面图：`assets/序号-标题-封面.png`（序号用三位数字如 001、002）
+- 标题格式：`序号-🚀简短标题`（序号保持三位数字对齐）
