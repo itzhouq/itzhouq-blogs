@@ -463,44 +463,58 @@ body {
     .header-content {
         padding: var(--space-sm);
     }
-    
+
     .logo a {
         font-size: 1.1rem;
     }
-    
+
     .logo-subtitle {
         font-size: 0.7rem;
     }
-    
+
     .nav {
         gap: var(--space-sm);
     }
-    
+
     .nav a {
         font-size: 0.85rem;
     }
-    
+
     .main {
         padding: var(--space-md) var(--space-sm);
     }
-    
+
     .featured-card {
         padding: var(--space-sm);
     }
-    
+
     .featured-title {
         font-size: 1.1rem;
     }
-    
+
     .article-item {
         flex-direction: column;
         gap: var(--space-xs);
     }
-    
+
     .article-tag {
         align-self: flex-start;
     }
-    
+
+    /* 移动端视频布局 */
+    .article-video {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .article-video .video-cover-link {
+        width: 100%;
+    }
+
+    .article-video .article-info {
+        width: 100%;
+    }
+
     .footer-content {
         flex-direction: column;
         gap: var(--space-sm);
@@ -548,28 +562,42 @@ body {
     color: #ff6600;
 }
 
-/* 文章视频样式 */
-.article-video .article-content {
+/* 文章视频样式 - 左图右文布局 */
+.article-video {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+}
+
+.article-video .video-cover-link {
+    flex-shrink: 0;
+    width: 220px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.article-video .video-cover {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.2s ease;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+}
+
+.video-cover-link:hover .video-cover {
+    transform: scale(1.02);
+}
+
+.article-video .article-info {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
 }
 
-.video-cover-link {
-    display: block;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.video-cover {
-    width: 100%;
-    height: auto;
-    display: block;
-    transition: transform 0.2s ease;
-}
-
-.video-cover-link:hover .video-cover {
-    transform: scale(1.02);
+.article-video .article-title {
+    margin-bottom: 0.25rem;
 }
 
 /* 打印样式 */
