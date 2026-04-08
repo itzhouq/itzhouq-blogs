@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agency Agents 技术解析</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-gradient: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0f 100%);
+            --accent-cyan: #00f5ff;
+            --accent-blue: #0080ff;
+            --accent-purple: #a855f7;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border-glow: rgba(0, 245, 255, 0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .slide {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            background: var(--bg-gradient);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .slide.active {
+            display: flex;
+        }
+
+        /* 背景装饰 */
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(0, 245, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* 网格线装饰 */
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 64px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 24px;
+            text-align: center;
+            letter-spacing: -1px;
+        }
+
+        h2 {
+            font-size: 48px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 48px;
+            text-align: center;
+            position: relative;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+            border-radius: 2px;
+        }
+
+        h3 {
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--accent-cyan);
+            margin-bottom: 16px;
+        }
+
+        p {
+            font-size: 26px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+            text-align: center;
+            max-width: 900px;
+        }
+
+        .subtitle {
+            font-size: 28px;
+            color: var(--text-secondary);
+            margin-top: 16px;
+        }
+
+        /* 卡片布局 */
+        .cards {
+            display: flex;
+            gap: 32px;
+            justify-content: center;
+            flex-wrap: wrap;
+            z-index: 1;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 245, 255, 0.2);
+            border-radius: 16px;
+            padding: 40px 32px;
+            min-width: 280px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 30px rgba(0, 245, 255, 0.15);
+        }
+
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .card-desc {
+            font-size: 18px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* 特性列表 */
+        .features {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px 48px;
+            z-index: 1;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            font-size: 22px;
+            color: var(--text-secondary);
+        }
+
+        .feature-bullet {
+            width: 12px;
+            height: 12px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            margin-top: 10px;
+            flex-shrink: 0;
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        /* 对比表格 */
+        .comparison-table {
+            width: 100%;
+            max-width: 1000px;
+            border-collapse: collapse;
+            z-index: 1;
+            font-size: 20px;
+        }
+
+        .comparison-table th {
+            background: rgba(0, 245, 255, 0.1);
+            padding: 20px;
+            text-align: left;
+            color: var(--accent-cyan);
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-glow);
+        }
+
+        .comparison-table td {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+        }
+
+        .comparison-table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* 场景列表 */
+        .scenarios {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            z-index: 1;
+        }
+
+        .scenario-item {
+            background: rgba(0, 245, 255, 0.05);
+            border: 1px solid rgba(0, 245, 255, 0.15);
+            border-radius: 12px;
+            padding: 28px 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .scenario-item:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-cyan);
+        }
+
+        .scenario-num {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 12px;
+        }
+
+        .scenario-title {
+            font-size: 20px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* 总结页 */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 32px;
+            z-index: 1;
+        }
+
+        .summary-item {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 245, 255, 0.15);
+            border-radius: 12px;
+            padding: 28px 32px;
+        }
+
+        .summary-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .summary-content h4 {
+            font-size: 20px;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .summary-content p {
+            font-size: 16px;
+            color: var(--text-secondary);
+            text-align: left;
+        }
+
+        /* 导航按钮 */
+        .nav-btn {
+            position: fixed;
+            bottom: 40px;
+            background: rgba(0, 245, 255, 0.1);
+            border: 1px solid var(--border-glow);
+            color: var(--accent-cyan);
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .nav-btn:hover {
+            background: rgba(0, 245, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+        }
+
+        .nav-prev {
+            left: 40px;
+        }
+
+        .nav-next {
+            right: 40px;
+        }
+
+        /* 页码 */
+        .slide-number {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 16px;
+            color: var(--text-secondary);
+            z-index: 100;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            transition: width 0.3s ease;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <!-- 第1页：封面 -->
+    <div class="slide active">
+        <div class="grid-overlay"></div>
+        <h1>Agency Agents</h1>
+        <p class="subtitle">赋予 AI 自主行动能力的下一代智能体架构</p>
+    </div>
+
+    <!-- 第2页：是什么 -->
+    <div class="slide">
+        <div class="grid-overlay"></div>
+        <h2>什么是 Agency Agents？</h2>
+        <div class="cards">
+            <div class="card">
+                <div class="card-icon">🎯</div>
+                <div class="card-title">自主感知</div>
+                <div class="card-desc">主动感知环境变化，无需人工触发</div>
+            </div>
+            <div class="card">
+                <div class="card-icon">🧠</div>
+                <div class="card-title">独立决策</div>
+                <div class="card-desc">基于目标自主规划并做出决策</div>
+            </div>
+            <div class="card">
+                <div class="card-icon">⚡</div>
+                <div class="card-title">执行行动</div>
+                <div class="card-desc">调用工具、API 完成实际任务</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第3页：核心特征 -->
+    <div class="slide">
+        <div class="grid-overlay"></div>
+        <h2>核心特征</h2>
+        <div class="features">
+            <div class="feature-item">
+                <div class="feature-bullet"></div>
+                <span><strong style="color: #fff;">持续迭代</strong> — 不依赖人类指令，自主完成多步骤任务</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-bullet"></div>
+                <span><strong style="color: #fff;">状态记忆</strong> — 维护长期上下文，记住任务历史和进展</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-bullet"></div>
+                <span><strong style="color: #fff;">工具调用</strong> — 通过 MCP 等协议连接外部系统和数据</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-bullet"></div>
+                <span><strong style="color: #fff;">目标导向</strong> — 将复杂任务分解为可执行的子任务</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第4页：为什么 -->
+    <div class="slide">
+        <div class="grid-overlay"></div>
+        <h2>为什么需要 Agency Agents？</h2>
+        <div class="cards">
+            <div class="card">
+                <div class="card-title" style="color: #ff6b6b; margin-bottom: 16px;">传统 LLM</div>
+                <div class="card-desc" style="text-align: left; line-height: 2;">
+                    • 单次响应，无法持续<br>
+                    • 需要人工分解任务<br>
+                    • 无状态，上下文有限<br>
+                    • 无法与外部系统交互
+                </div>
+            </div>
+            <div class="card" style="border-color: rgba(0, 245, 255, 0.5);">
+                <div class="card-title" style="color: #00f5ff; margin-bottom: 16px;">Agency Agents</div>
+                <div class="card-desc" style="text-align: left; line-height: 2;">
+                    • 持续迭代，调用工具<br>
+                    • 自主规划子任务<br>
+                    • 长期记忆和状态<br>
+                    • MCP 协议连接万物
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第5页：技术框架 -->
+    <div class="slide">
+        <div class="grid-overlay"></div>
+        <h2>核心技术框架</h2>
+        <div class="cards">
+            <div class="card" style="min-width: 360px;">
+                <div class="card-title" style="font-size: 28px; color: #a855f7;">Anthropic 生态</div>
+                <div class="card-desc" style="text-align: left; margin-top: 20px; line-height: 2;">
+                    <strong style="color: #fff;">MCP</strong> — AI 界的 USB-C 标准<br>
+                    <strong style="color: #fff;">Agent Skills</strong> — 模块化技能框架<br>
+                    <strong style="color: #fff;">多 Agent 架构</strong> — Docker 容器协作
+                </div>
+            </div>
+            <div class="card" style="min-width: 360px;">
+                <div class="card-title" style="font-size: 28px; color: #f97316;">Cloudflare SDK</div>
+                <div class="card-desc" style="text-align: left; margin-top: 20px; line-height: 2;">
+                    <strong style="color: #fff;">状态持久化</strong> — Durable Objects<br>
+                    <strong style="color: #fff;">实时通信</strong> — WebSocket + RPC<br>
+                    <strong style="color: #fff;">边缘部署</strong> — 低延迟高可用
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第6页：架构对比 -->
+    <div class="slide">
+        <div class="grid-overlay"></div>
+        <h2>架构模式对比</h2>
+        <table class="comparison-table">
+            <tr>
+                <th style="width: 20%;">特性</th>
+                <th style="width: 40%;">Workflows（工作流）</th>
+                <th style="width: 40%;">Agents（智能体）</th>
+            </tr>
+            <tr>
+                <td><strong style="color: #fff;">控制方式</strong></td>
+                <td>预定义代码路径，确定性执行</td>
+                <td>LLM 动态决策，灵活应对</td>
+            </tr>
+            <tr>
+                <td><strong style="color: #fff;">适用场景</strong></td>
+                <td>流程明确、规则固定的任务</td>
+                <td>开放式、需要探索的问题</td>
+            </tr>
+            <tr>
+                <td><strong style="color: #fff;">复杂度</strong></td>
+                <td>简单可控，易于调试</td>
+                <td>需要评估机制保证质量</td>
+            </tr>
+            <tr>
+                <td><strong style="color: #fff;">推荐场景</strong></td>
+                <td>审批流程、数据处理</td>
+                <td>代码生成、研究分析</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- 第7页：应用场景 -->
+    <div class="slide">
+        <div class="grid-overlay"></div>
+        <h2>应用场景</h2>
+        <div class="scenarios">
+            <div class="scenario-item">
+                <div class="scenario-num">01</div>
+                <div class="scenario-title">软件开发</div>
+            </div>
+            <div class="scenario-item">
+                <div class="scenario-num">02</div>
+                <div class="scenario-title">数据处理</div>
+            </div>
+            <div class="scenario-item">
+                <div class="scenario-num">03</div>
+                <div class="scenario-title">客户服务</div>
+            </div>
+            <div class="scenario-item">
+                <div class="scenario-num">04</div>
+                <div class="scenario-title">内容创作</div>
+            </div>
+            <div class="scenario-item">
+                <div class="scenario-num">05</div>
+                <div class="scenario-title">系统运维</div>
+            </div>
+            <div class="scenario-item">
+                <div class="scenario-num">06</div>
+                <div class="scenario-title">智能助理</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第8页：最佳实践 -->
+    <div class="slide">
+        <div class="grid-overlay"></div>
+        <h2>最佳实践建议</h2>
+        <div class="features" style="max-width: 800px;">
+            <div class="feature-item">
+                <div class="feature-bullet"></div>
+                <span><strong style="color: #fff;">从简单开始</strong> — 先用工作流解决，再引入 Agent 复杂度</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-bullet"></div>
+                <span><strong style="color: #fff;">建立评估体系</strong> — 没有评估的 Agent 难以持续优化</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-bullet"></div>
+                <span><strong style="color: #fff;">保持可控性</strong> — 关键决策点保留人工审核机制</span>
+            </div>
+            <div class="feature-item">
+                <div class="feature-bullet"></div>
+                <span><strong style="color: #fff;">模块化设计</strong> — 使用 Skills 和 MCP 保持灵活可扩展</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第9页：总结 -->
+    <div class="slide">
+        <div class="grid-overlay"></div>
+        <h2>总结与展望</h2>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <div class="summary-icon">✓</div>
+                <div class="summary-content">
+                    <h4>当前现状</h4>
+                    <p>MCP 成为行业标准，工具链日趋成熟</p>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-icon">→</div>
+                <div class="summary-content">
+                    <h4>发展趋势</h4>
+                    <p>多 Agent 协作、边缘部署、人机协同</p>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-icon">⚠</div>
+                <div class="summary-content">
+                    <h4>核心挑战</h4>
+                    <p>安全性、可控性、评估体系建设</p>
+                </div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-icon">★</div>
+                <div class="summary-content">
+                    <h4>实践建议</h4>
+                    <p>从工作流开始，按需引入 Agent</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第10页：结束 -->
+    <div class="slide">
+        <div class="grid-overlay"></div>
+        <h1 style="font-size: 72px;">谢谢观看</h1>
+        <p class="subtitle">Agency Agents — 开启 AI 自主智能新时代</p>
+    </div>
+
+    <!-- 导航 -->
+    <button class="nav-btn nav-prev" onclick="prevSlide()">← 上一页</button>
+    <button class="nav-btn nav-next" onclick="nextSlide()">下一页 →</button>
+    <div class="slide-number"><span id="current">1</span> / <span id="total">10</span></div>
+    <div class="progress-bar" id="progress" style="width: 10%;"></div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        let currentSlide = 0;
+
+        document.getElementById('total').textContent = totalSlides;
+
+        function updateSlide() {
+            slides.forEach((slide, index) => {
+                slide.classList.toggle('active', index === currentSlide);
+            });
+            document.getElementById('current').textContent = currentSlide + 1;
+            document.getElementById('progress').style.width = ((currentSlide + 1) / totalSlides * 100) + '%';
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevSlide();
+            }
+        });
+
+        // 触摸滑动支持
+        let touchStartX = 0;
+        document.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            const touchEndX = e.changedTouches[0].clientX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) {
+                diff > 0 ? nextSlide() : prevSlide();
+            }
+        });
+    </script>
+</body>
+</html>

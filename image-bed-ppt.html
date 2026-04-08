@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自媒体必备：白嫖10G流量 + 全球加速，个人图床最优解</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-dark: #0a0e17;
+            --bg-card: #131a2b;
+            --accent-blue: #00d4ff;
+            --accent-purple: #a855f7;
+            --accent-green: #10b981;
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .presentation {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 60px 80px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: var(--bg-dark);
+            overflow: hidden;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 封面页 */
+        .slide-cover {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #0a0e17 0%, #1a1f3a 50%, #0a0e17 100%);
+        }
+
+        .slide-cover::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 40%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 60%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-2%, -2%) rotate(1deg); }
+        }
+
+        .cover-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+
+        .cover-title {
+            font-size: 56px;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: 24px;
+            background: linear-gradient(90deg, #fff 0%, var(--accent-blue) 50%, var(--accent-purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .cover-subtitle {
+            font-size: 28px;
+            color: var(--text-secondary);
+            margin-bottom: 60px;
+        }
+
+        .cover-highlight {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .highlight-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 28px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+        }
+
+        .highlight-icon {
+            font-size: 28px;
+        }
+
+        .highlight-text {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .highlight-text span {
+            color: var(--accent-green);
+        }
+
+        /* 内容页通用样式 */
+        .slide-content {
+            background: linear-gradient(180deg, #0a0e17 0%, #0f1624 100%);
+        }
+
+        .slide-header {
+            margin-bottom: 50px;
+            text-align: center;
+        }
+
+        .slide-number {
+            font-size: 14px;
+            color: var(--accent-blue);
+            font-weight: 600;
+            margin-bottom: 12px;
+            letter-spacing: 2px;
+        }
+
+        .slide-title {
+            font-size: 44px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .slide-title .highlight {
+            color: var(--accent-blue);
+        }
+
+        .slide-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* 痛点页 */
+        .pain-points {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .pain-card {
+            padding: 28px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .pain-icon {
+            font-size: 32px;
+            margin-bottom: 16px;
+        }
+
+        .pain-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #f87171;
+        }
+
+        .pain-desc {
+            font-size: 18px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* 方案对比表 */
+        .comparison-table {
+            width: 100%;
+            max-width: 1000px;
+            border-collapse: collapse;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 20px 24px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .comparison-table th {
+            font-size: 16px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .comparison-table td {
+            font-size: 18px;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .comparison-table .best {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        .comparison-table .highlight-row {
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .comparison-table .highlight-row td {
+            color: var(--accent-blue);
+        }
+
+        /* 核心优势页 */
+        .advantages {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .advantage-card {
+            padding: 40px 32px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.3s;
+        }
+
+        .advantage-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .adv-icon {
+            font-size: 48px;
+            margin-bottom: 24px;
+        }
+
+        .adv-title {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .adv-desc {
+            font-size: 18px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* 步骤页 */
+        .steps {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 28px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .step-num {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .step-content {
+            text-align: center;
+            flex: 1;
+        }
+
+        .step-content h4 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .step-content p {
+            font-size: 17px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* 进阶用法页 */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .tool-card {
+            padding: 36px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+            text-align: center;
+        }
+
+        .tool-name {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .tool-desc {
+            font-size: 18px;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            text-align: center;
+        }
+
+        .tool-badge {
+            font-size: 14px;
+            padding: 4px 12px;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        /* 总结页 */
+        .summary-points {
+            display: flex;
+            gap: 40px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .summary-card {
+            flex: 1;
+            padding: 40px;
+            background: linear-gradient(135deg, var(--bg-card), rgba(0, 212, 255, 0.1));
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid rgba(0, 212, 255, 0.2);
+        }
+
+        .summary-icon {
+            font-size: 56px;
+            margin-bottom: 24px;
+        }
+
+        .summary-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .summary-desc {
+            font-size: 18px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* 结束页 */
+        .slide-end {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #0a0e17 0%, #1a1f3a 50%, #0a0e17 100%);
+        }
+
+        .end-title {
+            font-size: 64px;
+            font-weight: 800;
+            margin-bottom: 32px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .end-qr {
+            font-size: 24px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+        }
+
+        .end-qr span {
+            color: var(--accent-blue);
+        }
+
+        .end-blog {
+            font-size: 20px;
+            color: var(--text-secondary);
+        }
+
+        .end-blog a {
+            color: var(--accent-green);
+            text-decoration: none;
+        }
+
+        /* 导航 */
+        .nav {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 100;
+        }
+
+        .nav-btn {
+            width: 56px;
+            height: 56px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent-blue);
+            transform: scale(1.1);
+        }
+
+        .progress {
+            position: fixed;
+            bottom: 40px;
+            right: 80px;
+            font-size: 18px;
+            color: var(--text-secondary);
+            z-index: 100;
+        }
+
+        .progress .current {
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
+
+        /* 键盘提示 */
+        .keyboard-hint {
+            position: fixed;
+            bottom: 40px;
+            left: 80px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            z-index: 100;
+        }
+
+        .keyboard-hint kbd {
+            padding: 4px 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            margin: 0 4px;
+        }
+
+        /* 链接样式 */
+        a {
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* 小标题标签 */
+        .tag {
+            display: inline-block;
+            padding: 6px 16px;
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--accent-blue);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation">
+        <!-- Slide 1: 封面 -->
+        <div class="slide slide-cover active" data-slide="1">
+            <div class="cover-badge">🔥 干货分享</div>
+            <h1 class="cover-title">自媒体必备：白嫖 10G 流量<br>+ 全球加速</h1>
+            <p class="cover-subtitle">个人图床最优解，零成本搭建指南</p>
+            <div class="cover-highlight">
+                <div class="highlight-item">
+                    <span class="highlight-icon">💾</span>
+                    <span class="highlight-text">10GB <span>免费存储</span></span>
+                </div>
+                <div class="highlight-item">
+                    <span class="highlight-icon">🚀</span>
+                    <span class="highlight-text">全球 <span>CDN 加速</span></span>
+                </div>
+                <div class="highlight-item">
+                    <span class="highlight-icon">💰</span>
+                    <span class="highlight-text">流量费 <span>永远为零</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 痛点 -->
+        <div class="slide slide-content" data-slide="2">
+            <div class="slide-header">
+                <div class="tag">问题</div>
+                <h2 class="slide-title">为什么劝你别再用<span class="highlight">公共图床</span>？</h2>
+            </div>
+            <div class="slide-body">
+                <div class="pain-points">
+                    <div class="pain-card">
+                        <div class="pain-icon">💀</div>
+                        <h3 class="pain-title">服务商跑路</h3>
+                        <p class="pain-desc">说关就关，一夜之间文章里几十张图全变成裂开的占位符</p>
+                    </div>
+                    <div class="pain-card">
+                        <div class="pain-icon">🐢</div>
+                        <h3 class="pain-title">访问速度慢</h3>
+                        <p class="pain-desc">国内访问海外图床，加载图片像看幻灯片</p>
+                    </div>
+                    <div class="pain-card">
+                        <div class="pain-icon">👀</div>
+                        <h3 class="pain-title">隐私无保障</h3>
+                        <p class="pain-desc">图片可能被扫描、压缩甚至删除</p>
+                    </div>
+                    <div class="pain-card">
+                        <div class="pain-icon">🚫</div>
+                        <h3 class="pain-title">防盗链拦截</h3>
+                        <p class="pain-desc">微信公众号、知乎等平台对非白名单域名直接屏蔽</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 方案对比 -->
+        <div class="slide slide-content" data-slide="3">
+            <div class="slide-header">
+                <div class="tag">方案对比</div>
+                <h2 class="slide-title">为什么推荐 <span class="highlight">Cloudflare R2 + PicGo</span>？</h2>
+            </div>
+            <div class="slide-body">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>方案</th>
+                            <th>免费额度</th>
+                            <th>出站流量费</th>
+                            <th>CDN加速</th>
+                            <th>搭建难度</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="highlight-row">
+                            <td class="best">R2 + PicGo ⭐</td>
+                            <td class="best">10GB存储</td>
+                            <td class="best">完全免费 ✅</td>
+                            <td class="best">全球CDN</td>
+                            <td>中等</td>
+                        </tr>
+                        <tr>
+                            <td>阿里云OSS</td>
+                            <td>无</td>
+                            <td>按量付费</td>
+                            <td>需额外购买</td>
+                            <td>中等</td>
+                        </tr>
+                        <tr>
+                            <td>GitHub + jsDelivr</td>
+                            <td>仓库1GB软限</td>
+                            <td>免费</td>
+                            <td>有</td>
+                            <td>简单</td>
+                        </tr>
+                        <tr>
+                            <td>SM.MS / Imgur</td>
+                            <td>5GB</td>
+                            <td>免费</td>
+                            <td>有</td>
+                            <td>极简</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Slide 4: 核心优势 -->
+        <div class="slide slide-content" data-slide="4">
+            <div class="slide-header">
+                <div class="tag">核心优势</div>
+                <h2 class="slide-title">R2 最大的<span class="highlight">杀手锏</span>是什么？</h2>
+            </div>
+            <div class="slide-body">
+                <div class="advantages">
+                    <div class="advantage-card">
+                        <div class="adv-icon">💰</div>
+                        <h3 class="adv-title">零成本</h3>
+                        <p class="adv-desc">出站流量永远免费<br>不管多少人访问<br>不管访问多少次</p>
+                    </div>
+                    <div class="advantage-card">
+                        <div class="adv-icon">🚀</div>
+                        <h3 class="adv-title">速度快</h3>
+                        <p class="adv-desc">Cloudflare 全球 CDN<br>比大多数公共图床<br>快 3 倍以上</p>
+                    </div>
+                    <div class="advantage-card">
+                        <div class="adv-icon">🔐</div>
+                        <h3 class="adv-title">数据自主</h3>
+                        <p class="adv-desc">文件在自己的存储桶<br>想迁就迁<br>不用看平台脸色</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 搭建步骤概览 -->
+        <div class="slide slide-content" data-slide="5">
+            <div class="slide-header">
+                <div class="tag">5分钟搭建</div>
+                <h2 class="slide-title">全程<span class="highlight">5步</span>，不超过10分钟</h2>
+            </div>
+            <div class="slide-body">
+                <div class="steps">
+                    <div class="step-item">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <h4>创建 R2 存储桶</h4>
+                            <p>在 Cloudflare Dashboard 创建 R2 存储桶</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <h4>绑定自定义域名</h4>
+                            <p>使用自己的域名，链接更美观，访问更稳定</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <h4>生成 API 密钥</h4>
+                            <p>创建 S3 格式的 API 令牌，获取访问凭证</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">4</div>
+                        <div class="step-content">
+                            <h4>配置 PicGo</h4>
+                            <p>安装 picgo-plugin-s3 插件，填写配置信息</p>
+                        </div>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-num">5</div>
+                        <div class="step-content">
+                            <h4>测试上传</h4>
+                            <p>拖拽或粘贴图片，自动复制链接</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 进阶用法 -->
+        <div class="slide slide-content" data-slide="6">
+            <div class="slide-header">
+                <div class="tag">进阶玩法</div>
+                <h2 class="slide-title">配合<span class="highlight">写作工具</span>使用</h2>
+            </div>
+            <div class="slide-body">
+                <div class="tools-grid">
+                    <div class="tool-card">
+                        <h3 class="tool-name">Typora <span class="tool-badge">Markdown编辑器</span></h3>
+                        <p class="tool-desc">偏好设置 → 图像 → 上传图片<br>选择 PicGo (app)<br>填入 PicGo 路径 → 验证</p>
+                    </div>
+                    <div class="tool-card">
+                        <h3 class="tool-name">Obsidian <span class="tool-badge">知识管理</span></h3>
+                        <p class="tool-desc">安装 Image Auto Upload Plugin<br>选择 PicGo<br>填入端口 36677 → 开启</p>
+                    </div>
+                </div>
+                <p style="text-align: center; margin-top: 48px; font-size: 22px; color: var(--accent-green);">
+                    ✨ 之后在写作软件里直接粘贴图片，自动上传，链接自动替换<br><strong>零感知上传体验</strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 7: 总结 -->
+        <div class="slide slide-content" data-slide="7">
+            <div class="slide-header">
+                <div class="tag">总结</div>
+                <h2 class="slide-title">这套方案<span class="highlight">核心优势</span>就三点</h2>
+            </div>
+            <div class="slide-body">
+                <div class="summary-points">
+                    <div class="summary-card">
+                        <div class="summary-icon">💰</div>
+                        <h3 class="summary-title">零成本</h3>
+                        <p class="summary-desc">免费额度完全够用<br>出站流量不要钱</p>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon">🚀</div>
+                        <h3 class="summary-title">速度快</h3>
+                        <p class="summary-desc">Cloudflare 全球 CDN<br>访问体验更好</p>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-icon">🔐</div>
+                        <h3 class="summary-title">数据自主</h3>
+                        <p class="summary-desc">文件在自己的存储桶<br>想迁就迁</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 结束页 -->
+        <div class="slide slide-end" data-slide="8">
+            <h1 class="end-title">感谢观看</h1>
+            <p class="end-qr">关注公众号 <span>风飞扬itzhouq</span></p>
+            <p class="end-blog"><a href="https://blog.itzhouq.cn">blog.itzhouq.cn</a></p>
+        </div>
+    </div>
+
+    <!-- 导航按钮 -->
+    <div class="nav">
+        <button class="nav-btn" id="prevBtn">←</button>
+        <button class="nav-btn" id="nextBtn">→</button>
+    </div>
+
+    <div class="progress">
+        <span class="current" id="currentSlide">1</span> / <span id="totalSlides">8</span>
+    </div>
+
+    <div class="keyboard-hint">
+        使用 <kbd>←</kbd> <kbd>→</kbd> 或点击按钮翻页
+    </div>
+
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        let currentSlide = 1;
+
+        document.getElementById('totalSlides').textContent = totalSlides;
+
+        function showSlide(n) {
+            if (n < 1) n = 1;
+            if (n > totalSlides) n = totalSlides;
+
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[n - 1].classList.add('active');
+
+            currentSlide = n;
+            document.getElementById('currentSlide').textContent = n;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        document.getElementById('nextBtn').addEventListener('click', nextSlide);
+        document.getElementById('prevBtn').addEventListener('click', prevSlide);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                e.preventDefault();
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                prevSlide();
+            }
+        });
+    </script>
+</body>
+</html>
