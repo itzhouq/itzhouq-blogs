@@ -99,6 +99,7 @@ body {
 
 .nav {
     display: flex;
+    align-items: center;
     gap: var(--space-md);
 }
 
@@ -111,6 +112,53 @@ body {
 
 .nav a:hover {
     color: var(--color-text);
+}
+
+.social-icons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.social-icon-wrapper {
+    position: relative;
+}
+
+.social-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    display: block;
+}
+
+.social-icon:hover {
+    transform: scale(1.15);
+    opacity: 0.85;
+}
+
+.social-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 8px;
+}
+
+.social-tooltip img {
+    width: 240px;
+    height: auto;
+    display: block;
+    border-radius: 4px;
+}
+
+.social-icon-wrapper:hover .social-tooltip {
+    display: block;
 }
 
 /* 主内容区域 */
