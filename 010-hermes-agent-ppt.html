@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermes Agent — 会自己学习的 AI Agent</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --cyan:   #00e5ff;
+      --purple: #9b59ff;
+      --green:  #00ff88;
+      --orange: #ff6b35;
+      --bg:     #040c18;
+      --bg2:    #0a1628;
+      --text:   #e8f4fd;
+      --muted:  #6a8aaa;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', 'PingFang SC', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    /* ——— 网格背景 ——— */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(0,229,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,229,255,.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+    }
+
+    /* ——— 光晕 ——— */
+    body::after {
+      content: '';
+      position: fixed;
+      width: 900px; height: 900px;
+      background: radial-gradient(circle, rgba(0,229,255,.12) 0%, transparent 65%);
+      top: -300px; right: -200px;
+      pointer-events: none; z-index: 0;
+    }
+
+    .deck { width: 100vw; height: 100vh; position: relative; z-index: 1; }
+
+    /* ——— 幻灯片 ——— */
+    .slide {
+      position: absolute; inset: 0;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 100px;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity .45s ease, transform .45s ease;
+    }
+    .slide.active {
+      display: flex;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .slide.center { align-items: center; text-align: center; }
+
+    /* ——— 标题样式 ——— */
+    .slide-label {
+      font-size: 1.1rem;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin-bottom: 18px;
+      font-weight: 600;
+    }
+    h1 {
+      font-size: 5.5rem;
+      font-weight: 800;
+      line-height: 1.08;
+      background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 24px;
+    }
+    h2 {
+      font-size: 3.4rem;
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 32px;
+    }
+    h2 .hl { color: var(--cyan); }
+
+    .subtitle {
+      font-size: 1.8rem;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 820px;
+    }
+
+    /* ——— 卡片列表 ——— */
+    .cards {
+      display: grid;
+      gap: 20px;
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 8px;
+    }
+    .cards.col2 { grid-template-columns: 1fr 1fr; }
+    .cards.col3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    .card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(0,229,255,.18);
+      border-radius: 14px;
+      padding: 28px 32px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+    }
+    .card-icon { font-size: 2.2rem; margin-bottom: 12px; }
+    .card-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 8px;
+    }
+    .card-body {
+      font-size: 1.15rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ——— 要点列表 ——— */
+    .points { list-style: none; max-width: 1000px; margin-top: 4px; }
+    .points li {
+      font-size: 1.6rem;
+      line-height: 1.5;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+    }
+    .points li:last-child { border-bottom: none; }
+    .points li::before {
+      content: '▸';
+      color: var(--cyan);
+      font-size: 1.1rem;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+
+    /* ——— 流程步骤 ——— */
+    .steps {
+      display: flex;
+      gap: 0;
+      align-items: center;
+      max-width: 1100px;
+      margin-top: 12px;
+      flex-wrap: nowrap;
+    }
+    .step {
+      flex: 1;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(0,229,255,.18);
+      border-radius: 12px;
+      padding: 24px 20px;
+      text-align: center;
+      position: relative;
+    }
+    .step-num {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--cyan);
+      line-height: 1;
+      margin-bottom: 10px;
+    }
+    .step-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .step-desc { font-size: 1rem; color: var(--muted); }
+    .arrow {
+      font-size: 1.8rem;
+      color: var(--purple);
+      padding: 0 8px;
+      flex-shrink: 0;
+    }
+
+    /* ——— 高亮 Badge ——— */
+    .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 30px;
+      font-size: 1rem;
+      font-weight: 700;
+      background: rgba(0,229,255,.15);
+      color: var(--cyan);
+      border: 1px solid rgba(0,229,255,.35);
+      margin-bottom: 18px;
+    }
+
+    /* ——— 大数字 ——— */
+    .bignum {
+      font-size: 7rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--cyan), var(--green));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    /* ——— 总结卡 ——— */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      max-width: 1000px;
+      width: 100%;
+      margin-top: 12px;
+    }
+    .sum-card {
+      background: rgba(155,89,255,.08);
+      border: 1px solid rgba(155,89,255,.3);
+      border-radius: 12px;
+      padding: 26px 28px;
+    }
+    .sum-card .sum-q {
+      font-size: 1rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--purple);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .sum-card .sum-a {
+      font-size: 1.35rem;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ——— 对比表格 ——— */
+    .compare-table {
+      width: 100%;
+      max-width: 1000px;
+      margin-top: 12px;
+      border-collapse: collapse;
+    }
+    .compare-table th, .compare-table td {
+      padding: 16px 20px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+      font-size: 1.2rem;
+    }
+    .compare-table th {
+      color: var(--cyan);
+      font-weight: 700;
+      background: rgba(0,229,255,.08);
+    }
+    .compare-table td { color: var(--muted); }
+    .compare-table .yes { color: var(--green); }
+    .compare-table .no { color: var(--orange); }
+    .compare-table .partial { color: var(--orange); }
+
+    /* ——— 导航 ——— */
+    .nav {
+      position: fixed;
+      bottom: 36px;
+      right: 56px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .nav-btn {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 1px solid rgba(0,229,255,.4);
+      background: rgba(0,229,255,.08);
+      color: var(--cyan);
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .2s, border-color .2s;
+    }
+    .nav-btn:hover { background: rgba(0,229,255,.18); border-color: var(--cyan); }
+    .nav-counter {
+      font-size: 1rem;
+      color: var(--muted);
+      min-width: 48px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ——— 进度条 ——— */
+    .progress {
+      position: fixed;
+      bottom: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+      transition: width .4s ease;
+      z-index: 100;
+    }
+
+    /* ——— slide 进入动画补丁：强制 reflow ——— */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .slide.active { animation: slideIn .42s ease forwards; }
+  </style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- ① 封面 -->
+  <div class="slide center active" id="s1">
+    <div class="slide-label">AI Agent · Open Source</div>
+    <h1>Hermes Agent</h1>
+    <p class="subtitle">与你共同成长的 AI Agent<br>会自己学习的智能助手</p>
+    <div style="margin-top:40px; color:var(--muted); font-size:1.2rem; letter-spacing:.1em;">
+      Nous Research &nbsp;·&nbsp; 2026.02 发布 &nbsp;·&nbsp; 28.4K+ ⭐
+    </div>
+    <div style="margin-top:24px;">
+      <span class="badge">MIT 许可证</span>
+      <span class="badge">自学习闭环</span>
+      <span class="badge">跨平台支持</span>
+    </div>
+  </div>
+
+  <!-- ② 问题：传统 Agent 的痛点 -->
+  <div class="slide" id="s2">
+    <div class="slide-label">为什么需要它</div>
+    <h2>传统 AI Agent 的<span class="hl">三大局限</span></h2>
+    <ul class="points">
+      <li>每次对话从零开始 —— 不记得之前学到的经验</li>
+      <li>重复完成相似任务 —— 没有沉淀可复用的技能</li>
+      <li>无法理解用户偏好 —— 每次都要重新说明习惯</li>
+    </ul>
+  </div>
+
+  <!-- ③ 核心定位 -->
+  <div class="slide" id="s3">
+    <div class="slide-label">是什么</div>
+    <h2>Hermes Agent ——<span class="hl">会成长的 Agent</span></h2>
+    <div class="cards col2">
+      <div class="card">
+        <div class="card-icon">🧠</div>
+        <div class="card-title">内置学习闭环</div>
+        <div class="card-body">不是简单的"记住"，而是持续从经验中进化，越用越聪明</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">自动创建技能</div>
+        <div class="card-body">复杂任务完成后自动提取模式，生成可复用的技能</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔌</div>
+        <div class="card-title">跨平台统一</div>
+        <div class="card-body">一个 Agent，多个入口：CLI、Telegram、Discord、Slack 等</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <div class="card-title">隐私友好</div>
+        <div class="card-body">可完全本地部署，数据不上云，保护你的隐私</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ 自我学习闭环 -->
+  <div class="slide" id="s4">
+    <div class="slide-label">核心特性</div>
+    <h2>自我学习<span class="hl">闭环机制</span></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-name">任务执行</div>
+        <div class="step-desc">完成复杂任务<br>5+ 工具调用</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-name">模式提取</div>
+        <div class="step-desc">自动识别工作流<br>生成技能</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-name">技能存储</div>
+        <div class="step-desc">本地持久化<br>跨会话使用</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-name">持续优化</div>
+        <div class="step-desc">根据执行效果<br>自动改进技能</div>
+      </div>
+    </div>
+    <p style="margin-top:32px; font-size:1.3rem; color:var(--muted);">
+      用户纠正或错误恢复后也会触发技能创建 · 支持 patch/edit 修改技能
+    </p>
+  </div>
+
+  <!-- ⑤ 记忆系统 -->
+  <div class="slide" id="s5">
+    <div class="slide-label">记忆架构</div>
+    <h2>双文件<span class="hl">持久化记忆</span></h2>
+    <div class="cards col2">
+      <div class="card">
+        <div class="card-icon">📝</div>
+        <div class="card-title">MEMORY.md</div>
+        <div class="card-body">Agent 通用记忆<br>跨会话积累的知识</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">👤</div>
+        <div class="card-title">USER.md</div>
+        <div class="card-body">用户个性化信息<br>偏好、习惯、需求</div>
+      </div>
+    </div>
+    <p style="margin-top:28px; font-size:1.3rem; color:var(--muted);">
+      存储位置：~/.hermes/memories/ &nbsp;|&nbsp; LLM 自动总结关键内容 &nbsp;|&nbsp; 支持跨会话搜索
+    </p>
+  </div>
+
+  <!-- ⑥ 用户建模 -->
+  <div class="slide" id="s6">
+    <div class="slide-label">用户理解</div>
+    <h2>使用 <span class="hl">Honcho</span> 构建用户模型</h2>
+    <ul class="points">
+      <li>理解用户偏好、习惯、需求</li>
+      <li>对话式建模，持续更新</li>
+      <li>个性化服务，越用越懂你</li>
+    </ul>
+    <p style="margin-top:32px; font-size:1.3rem; color:var(--muted);">
+      构建真正的个性化 AI 伙伴，而非通用工具
+    </p>
+  </div>
+
+  <!-- ⑦ 跨平台支持 -->
+  <div class="slide" id="s7">
+    <div class="slide-label">跨平台</div>
+    <h2>一个 Agent，<span class="hl">多个入口</span></h2>
+    <div class="cards col3">
+      <div class="card">
+        <div class="card-icon">💻</div>
+        <div class="card-title">CLI / TUI</div>
+        <div class="card-body">完整界面、多行编辑<br>流式输出</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">✈️</div>
+        <div class="card-title">Telegram</div>
+        <div class="card-body">语音转文字<br>跨平台对话</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">💬</div>
+        <div class="card-title">Discord / Slack</div>
+        <div class="card-body">社区集成<br>企业协作</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📧</div>
+        <div class="card-title">Email</div>
+        <div class="card-body">邮件集成</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📱</div>
+        <div class="card-title">WhatsApp</div>
+        <div class="card-body">即时通讯</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <div class="card-title">Signal</div>
+        <div class="card-body">隐私通讯</div>
+      </div>
+    </div>
+    <p style="margin-top:20px; font-size:1.2rem; color:var(--muted);">
+      只需运行一个 gateway 进程
+    </p>
+  </div>
+
+  <!-- ⑧ 多模型支持 -->
+  <div class="slide" id="s8">
+    <div class="slide-label">多模型</div>
+    <h2>不绑定<span class="hl">任何提供商</span></h2>
+    <div class="cards col3">
+      <div class="card">
+        <div class="card-icon">🤖</div>
+        <div class="card-title">OpenRouter</div>
+        <div class="card-body">200+ 模型</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌐</div>
+        <div class="card-title">Claude / GPT</div>
+        <div class="card-body">Anthropic / OpenAI</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🇨🇳</div>
+        <div class="card-title">国产模型</div>
+        <div class="card-body">GLM / Kimi / MiniMax</div>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:1.3rem; color:var(--muted);">
+      切换命令：hermes model --provider openrouter --model claude-3.5-sonnet
+    </p>
+  </div>
+
+  <!-- ⑨ 灵活部署 -->
+  <div class="slide" id="s9">
+    <div class="slide-label">部署</div>
+    <h2>多种部署方式<span class="hl">灵活选择</span></h2>
+    <div class="cards col3">
+      <div class="card">
+        <div class="card-icon">💻</div>
+        <div class="card-title">本地</div>
+        <div class="card-body">笔记本直接运行</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">🐳</div>
+        <div class="card-title">Docker</div>
+        <div class="card-body">容器化部署</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">☁️</div>
+        <div class="card-title">云服务</div>
+        <div class="card-body">Daytona / Singularity<br>Modal 近乎零成本</div>
+      </div>
+    </div>
+    <p style="margin-top:24px; font-size:1.4rem; color:var(--cyan);">
+      最低配置：$5 VPS · 也可扩展至 GPU 集群
+    </p>
+  </div>
+
+  <!-- ⑩ 快速开始 -->
+  <div class="slide" id="s10">
+    <div class="slide-label">快速开始</div>
+    <h2>三步<span class="hl">启动使用</span></h2>
+    <ul class="points">
+      <li>
+        <span>
+          <strong style="color:var(--cyan);">Step 1 · 安装</strong><br>
+          <span style="color:var(--muted);">git clone &amp;&amp; pip install -r requirements.txt</span>
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong style="color:var(--cyan);">Step 2 · 配置</strong><br>
+          <span style="color:var(--muted);">hermes init &amp;&amp; hermes config set ANTHROPIC_API_KEY xxx</span>
+        </span>
+      </li>
+      <li>
+        <span>
+          <strong style="color:var(--cyan);">Step 3 · 运行</strong><br>
+          <span style="color:var(--muted);">hermes run · 指定模型：hermes model --provider openrouter --model claude-3.5-sonnet</span>
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- ⑪ 与 OpenClaw 对比 -->
+  <div class="slide" id="s11">
+    <div class="slide-label">对比</div>
+    <h2>与 <span class="hl">OpenClaw</span> 各有侧重</h2>
+    <table class="compare-table">
+      <tr>
+        <th>特性</th>
+        <th>Hermes Agent</th>
+        <th>OpenClaw</th>
+      </tr>
+      <tr>
+        <td>学习闭环</td>
+        <td class="yes">✅ 内置</td>
+        <td class="no">❌</td>
+      </tr>
+      <tr>
+        <td>技能自动创建</td>
+        <td class="yes">✅ 支持</td>
+        <td class="no">❌</td>
+      </tr>
+      <tr>
+        <td>记忆持久化</td>
+        <td class="yes">✅ 双文件架构</td>
+        <td class="no">❌</td>
+      </tr>
+      <tr>
+        <td>多平台</td>
+        <td class="yes">✅ Telegram/Discord 等</td>
+        <td class="yes">✅</td>
+      </tr>
+      <tr>
+        <td>多模型</td>
+        <td class="yes">✅ 开放</td>
+        <td class="partial">⚠️ 主要 Claude</td>
+      </tr>
+      <tr>
+        <td>多 Agent 协作</td>
+        <td class="no">❌</td>
+        <td class="yes">✅ 核心定位</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- ⑫ 优缺点 -->
+  <div class="slide" id="s12">
+    <div class="slide-label">分析</div>
+    <h2>优缺点<span class="hl">一览</span></h2>
+    <div class="summary-grid">
+      <div class="sum-card">
+        <div class="sum-q">优点</div>
+        <div class="sum-a">真正的自学习能力<br>完全开源 MIT<br>隐私友好可本地部署<br>多模型不锁定<br>跨平台统一入口</div>
+      </div>
+      <div class="sum-card" style="background:rgba(255,107,53,.08);border-color:rgba(255,107,53,.3);">
+        <div class="sum-q" style="color:var(--orange);">缺点</div>
+        <div class="sum-a">学习曲线<br>完整功能需一定硬件<br>多平台配置复杂<br>社区生态较新</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑬ 总结 -->
+  <div class="slide center" id="s13">
+    <div class="slide-label">总结</div>
+    <h2>从<span class="hl">工具</span>到<span class="hl">伙伴</span></h2>
+    <p class="subtitle" style="font-size:2rem; max-width:900px;">
+      Hermes Agent 代表了 AI Agent 的新方向<br>
+      内置学习闭环让 Agent 真正从经验中成长
+    </p>
+    <div style="margin-top:40px;">
+      <span class="badge" style="font-size:1.2rem; padding:8px 24px;">推荐场景</span>
+    </div>
+    <p style="margin-top:20px; font-size:1.4rem; color:var(--muted);">
+      注重隐私 · 需要跨平台 · 期望 AI 持续学习进化
+    </p>
+    <div style="margin-top:40px; color:var(--cyan); font-size:1.3rem;">
+      github.com/NousResearch/hermes-agent
+    </div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- 导航 -->
+<div class="nav">
+  <button class="nav-btn" id="prev">&#8592;</button>
+  <span class="nav-counter" id="counter">1 / 13</span>
+  <button class="nav-btn" id="next">&#8594;</button>
+</div>
+<div class="progress" id="progress"></div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let cur = 0;
+
+  function goto(n) {
+    slides[cur].classList.remove('active');
+    cur = (n + total) % total;
+    slides[cur].classList.remove('active');
+    // force reflow
+    void slides[cur].offsetWidth;
+    slides[cur].classList.add('active');
+    document.getElementById('counter').textContent = (cur + 1) + ' / ' + total;
+    document.getElementById('progress').style.width = ((cur + 1) / total * 100) + '%';
+  }
+
+  document.getElementById('next').onclick = () => goto(cur + 1);
+  document.getElementById('prev').onclick = () => goto(cur - 1);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') goto(cur + 1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')                   goto(cur - 1);
+  });
+
+  // init progress
+  document.getElementById('progress').style.width = (1 / total * 100) + '%';
+</script>
+</body>
+</html>
